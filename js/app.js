@@ -1,3 +1,4 @@
+import { stopRepeating } from './views/pointer.js';
 import { createWakeLock } from './lib/wakelock.js';
 import * as repo from './repo.js';
 import { renderSettings } from './views/settings.js';
@@ -17,7 +18,7 @@ async function boot() {
   });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') wake.acquire(); });
   async function navigate(name, session) {
-    cleanup();
+    cleanup(); stopRepeating();
     await wake.setActive(name === 'session');
     document.querySelector('#error').hidden = true;
     for (const view of document.querySelectorAll('main > section')) view.hidden = view.id !== `view-${name}`;

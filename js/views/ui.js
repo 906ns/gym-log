@@ -1,4 +1,5 @@
-import { increment } from '../lib/calc.js';
+import { stepValue } from '../lib/input.js';
+import { bindRepeat } from './pointer.js';
 export function element(tag, text, className) {
   const node = document.createElement(tag);
   if (text !== undefined) node.textContent = text;
@@ -39,12 +40,38 @@ export function label(text, field) {
 }
 export function numberControl(title, value, step, min, max, mode = 'decimal') {
   const field = input(title, value, mode);
+  let delta = step;
   const group = element('div', undefined, 'number-control');
-  const minus = button('−', () => { field.value = increment(field.value, -step, min, max); });
-  const plus = button('+', () => { field.value = increment(field.value, step, min, max); });
+  const change = direction => {
+    const current = field.value === '' ? min : Number(field.value);
+    if (!Number.isFinite(current)) { showError(new Error('数値を入力してください')); return false; }
+    const next = stepValue(current, direction * delta, min, max);
+    field.value = next.value;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    return next.continue;
+  };
+  const minus = element('button', '−'); const plus = element('button', '+');
+  minus.type = plus.type = 'button';
+  minus.className = plus.className = 'repeat-button';
+  bindRepeat(minus, () => change(-1)); bindRepeat(plus, () => change(1));
   minus.setAttribute('aria-label', `${title}を減らす`); plus.setAttribute('aria-label', `${title}を増やす`);
-  group.append(minus, field, element('span', title, 'unit'), plus);
-  return { group, field };
+  field.addEventListener('focus', () => requestAnimationFrame(() => field.select()));
+  const box = element('div', undefined, 'number-field');
+  box.append(field, element('span', title, 'unit'));
+  group.append(minus, box, plus);
+  return { group, field, setStep: value => { delta = value; } };
+}
+export function increments(control, current, save) {
+  const group = element('div', undefined, 'increments');
+  group.setAttribute('aria-label', '重量の増減幅');
+  for (const step of [1, 2.5, 5, 10]) {
+    const node = button(String(step), async () => {
+      await save(step); control.setStep(step);
+      for (const sibling of group.children) sibling.setAttribute('aria-pressed', String(sibling === node));
+    });
+    node.setAttribute('aria-pressed', String(current === step)); group.append(node);
+  }
+  return group;
 }
 export function template(id) { return document.getElementById(id).content.firstElementChild.cloneNode(true); }
 export function dialog(id, title) {

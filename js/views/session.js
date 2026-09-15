@@ -1,7 +1,8 @@
+import { stopRepeating } from './pointer.js';
 import * as repo from '../repo.js';
 import { elapsedSeconds, formatElapsed, formatDate } from '../lib/datetime.js';
 import { maxWeight, bestMax, previousDifference } from '../lib/calc.js';
-import { element, button, numberControl, template, dialog, confirmAction, editText, parts, select, input } from './ui.js';
+import { element, button, numberControl, template, dialog, confirmAction, editText, parts, select, input, increments } from './ui.js';
 export async function renderSession(root, session, navigate) {
   let selected = null;
   let added = [];
@@ -26,6 +27,7 @@ export async function renderSession(root, session, navigate) {
     elapsed.textContent = formatElapsed(elapsedSeconds(session.started_at, Date.now()));
     const last = sets.at(-1);
     footer.hidden = !last;
+    requestAnimationFrame(() => root.style.setProperty('--rest-offset', `${footer.getBoundingClientRect().height}px`));
     if (!last) return;
     const seconds = elapsedSeconds(last.recorded_at, Date.now());
     const target = exercises.find(row => row.id === last.exercise_id)?.default_rest_seconds || defaultRest;
@@ -41,6 +43,7 @@ export async function renderSession(root, session, navigate) {
     paint(); tick();
   }
   function paint() {
+    stopRepeating();
     cards.replaceChildren();
     const ids = [...new Set([...sets.map(row => row.exercise_id), ...added])];
     if (!ids.length) cards.append(element('p', '種目を追加して記録を始めましょう', 'muted'));
@@ -61,7 +64,7 @@ export async function renderSession(root, session, navigate) {
   }
   function expanded(card, exercise, today, prev) {
     const initial = today.at(-1) || prev?.sets[0];
-    const weight = numberControl('kg', initial?.weight ?? '', exercise.weight_increment, 0, 500);
+    const weight = numberControl('kg', initial?.weight ?? '', exercise.increment_kg, 0, 500);
     const reps = numberControl('回', initial?.reps ?? '', 1, 1, 100, 'numeric');
     weight.field.setAttribute('aria-label', '重量'); reps.field.setAttribute('aria-label', 'レップ');
     weight.field.classList.add('weight-input');
@@ -91,12 +94,17 @@ export async function renderSession(root, session, navigate) {
       card.append(row);
     }
     const controls = element('div', undefined, 'controls');
-    controls.append(weight.group, reps.group);
+    controls.append(weight.group, increments(weight, exercise.increment_kg, async step => {
+      const updated = await repo.saveExercise({ ...exercise, increment_kg: step }, exercise);
+      Object.assign(exercise, updated);
+    }), reps.group);
     if (exercise.load_type === 'plate') controls.append(element('p', '合計（両側）', 'muted'));
-    controls.append(button('記録する', async () => {
+    const record = button('記録する', async () => {
       const row = await repo.saveSet(session.id, exercise.id, weight.field.value, reps.field.value);
       lastAdded = row.id; await reload();
-    }, 'primary'));
+    }, 'primary');
+    for (const field of [weight.field, reps.field]) field.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); record.click(); } });
+    controls.append(record);
     card.append(controls);
     if (exercise.setup_note) card.append(button(exercise.setup_note, () => editText('セッティング', exercise.setup_note, async value => {
       await repo.saveExercise({ ...exercise, setup_note: value }, exercise); await reload();
@@ -105,7 +113,7 @@ export async function renderSession(root, session, navigate) {
   function editSet(set) {
     const modal = dialog('dlg-editor', 'セットを編集');
     const exercise = exercises.find(row => row.id === set.exercise_id);
-    const weight = numberControl('kg', set.weight, exercise.weight_increment, 0, 500);
+    const weight = numberControl('kg', set.weight, exercise.increment_kg, 0, 500);
     const reps = numberControl('回', set.reps, 1, 1, 100, 'numeric');
     modal.append(weight.group, reps.group, button('保存する', async () => {
       await repo.saveSet(session.id, set.exercise_id, weight.field.value, reps.field.value, set); modal.close(); lastAdded = null; await reload();
@@ -144,5 +152,5 @@ export async function renderSession(root, session, navigate) {
   }
   await reload();
   const timer = setInterval(tick, 1000);
-  return () => { disposed = true; clearInterval(timer); };
+  return () => { disposed = true; clearInterval(timer); stopRepeating(); };
 }

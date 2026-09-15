@@ -48,7 +48,7 @@ export async function renderSettings(root, navigate) {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     }, 'wide'), label('バックアップから復元する', upload), element('p', `データの保持: ${persisted ? '許可' : '未許可'}`),
     element('p', `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`), element('h2', 'このアプリ'),
-    element('p', 'バージョン 1.0.0'), element('p', 'キャッシュ gym-log-v11-2'));
+    element('p', 'バージョン 1.0.0'), element('p', 'キャッシュ gym-log-v11-3'));
   upload.parentElement.classList.add('danger');
   if (!persisted) root.append(element('p', 'ホーム画面に追加して使い、定期的にバックアップを書き出してください。', 'muted'));
   function editExercise(existing) {
@@ -56,13 +56,13 @@ export async function renderSettings(root, navigate) {
     const fields = {
       name: input('名前', existing?.name || ''), name_en: input('英語表記', existing?.name_en || ''),
       body_part: select('部位', parts, existing?.body_part || 'chest'),
-      weight_increment: input('重量刻み', existing?.weight_increment ?? 5, 'decimal'),
+      increment_kg: input('重量刻み', existing?.increment_kg ?? 5, 'decimal'),
       default_rest_seconds: input('目標休憩秒数', existing?.default_rest_seconds ?? rest, 'numeric'),
       setup_note: element('textarea'), is_archived: input('アーカイブ')
     };
     fields.setup_note.value = existing?.setup_note || ''; fields.setup_note.setAttribute('aria-label', 'セッティングメモ');
     fields.is_archived.type = 'checkbox'; fields.is_archived.checked = existing?.is_archived || false;
-    const labels = { name: '名前', name_en: '英語表記', body_part: '部位', weight_increment: '重量刻み（kg）', default_rest_seconds: '目標休憩秒数', setup_note: 'セッティングメモ', is_archived: 'アーカイブ' };
+    const labels = { name: '名前', name_en: '英語表記', body_part: '部位', increment_kg: '重量刻み（kg）', default_rest_seconds: '目標休憩秒数', setup_note: 'セッティングメモ', is_archived: 'アーカイブ' };
     for (const [key, field] of Object.entries(fields)) modal.append(label(labels[key], field));
     modal.append(button('保存する', async () => {
       const values = Object.fromEntries(Object.entries(fields).map(([key, field]) => [key, key === 'is_archived' ? field.checked : field.value]));
