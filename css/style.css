@@ -74,3 +74,8 @@ input[type="checkbox"] { display: inline-block; width: 44px; vertical-align: mid
 .rest { z-index: 3; }
 .pr-badge { color: var(--brass); font-size: 15px; padding: var(--sp-1) var(--sp-2); }
 .pr-badge:empty, .pr-line:empty { display: none; }
+.exercise-name { border: 0; background: none; font-size: 18px; font-weight: 600; text-align: left; padding: 0; width: 100%; }
+.card > h2 { margin: 0; }
+.history-entry { border-top: 1px solid var(--line); padding: var(--sp-3) 0; }
+.history-entry h3 { font-size: 17px; font-weight: 500; }
+.sheet > input { width: 100%; margin-top: var(--sp-3); }

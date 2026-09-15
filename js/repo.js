@@ -190,3 +190,8 @@ export async function importBackup(text) {
 export const exerciseSets = exerciseId => db.scan('sets', {
   index: 'by_exercise_recorded', range: IDBKeyRange.bound([exerciseId, -Infinity], [exerciseId, Infinity]), accept: active
 });
+export async function exerciseHistory(exerciseId) {
+  const sets = await exerciseSets(exerciseId);
+  const sessions = await Promise.all([...new Set(sets.map(row => row.session_id))].map(id => db.get('sessions', id)));
+  return { sets, sessions: sessions.filter(row => row && active(row)) };
+}

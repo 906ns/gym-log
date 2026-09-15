@@ -1,3 +1,5 @@
+import { showExerciseHistory } from './exercise-history.js';
+import { filterExercises } from '../lib/history.js';
 import { personalRecords, recordAchievements } from '../lib/records.js';
 import { weightControl } from './weight-control.js';
 import { resolveUnit, weightText, formatTotal } from '../lib/units.js';
@@ -59,8 +61,11 @@ export async function renderSession(root, session, navigate) {
       const card = template('tpl-exercise-card');
       const toggle = button('', () => { selected = selected === id ? null : id; paint(); }, 'card-heading');
       toggle.setAttribute('aria-expanded', String(selected === id));
-      toggle.append(element('h2', exercise.name), element('span', `${today.length}セット / 最大${weightText(maxWeight(today), resolveUnit(exercise, globalUnit))}`));
-      card.append(toggle);
+      toggle.append(element('span', `${today.length}セット / 最大${weightText(maxWeight(today), resolveUnit(exercise, globalUnit))}`));
+      const name = button(exercise.name, () => showExerciseHistory(exercise, resolveUnit(exercise, globalUnit), reload), 'exercise-name');
+      const heading = element('h2'); heading.append(name);
+      toggle.setAttribute('aria-label', `${exercise.name}の入力を${selected === id ? '閉じる' : '開く'}`);
+      card.append(heading, toggle);
       if (today.length) card.append(element('p', `推定1RM ${formatTotal(bestMax(today), resolveUnit(exercise, globalUnit))}${prev ? ` / 前回比 ${formatTotal(previousDifference(today, prev.sets), resolveUnit(exercise, globalUnit))}` : ''}`, 'muted'));
       if (selected === id) expanded(card, exercise, today, prev);
       cards.append(card);
@@ -146,10 +151,14 @@ export async function renderSession(root, session, navigate) {
     const modal = dialog('dlg-exercise-picker', '種目を選ぶ');
     const filters = element('div', undefined, 'filters');
     const list = element('div');
+    const search = input('種目名で検索'); search.placeholder = '種目名・英語名で検索';
+    let selectedPart = '';
+    search.addEventListener('input', () => filter(selectedPart));
     function filter(part) {
+      selectedPart = part;
       for (const node of filters.children) node.setAttribute('aria-pressed', String(node.dataset.part === part));
       list.replaceChildren();
-      for (const exercise of rows.filter(row => !part || row.body_part === part)) {
+      for (const exercise of filterExercises(rows, part, search.value)) {
         list.append(button(`${exercise.name}${sets.some(row => row.exercise_id === exercise.id) ? ' 記録済' : ''}`, async () => {
           added.push(exercise.id); selected = exercise.id; modal.close(); await reload();
         }, 'wide'));
@@ -158,7 +167,7 @@ export async function renderSession(root, session, navigate) {
     for (const [key, text] of Object.entries({ '': 'すべて', ...parts })) {
       const control = button(text, () => filter(key)); control.dataset.part = key; filters.append(control);
     }
-    modal.append(button('閉じる', () => modal.close()), filters, list, button('＋ 種目を新規作成', () => {
+    modal.append(button('閉じる', () => modal.close()), search, filters, list, button('＋ 種目を新規作成', () => {
       const form = dialog('dlg-editor', '種目を新規作成');
       const name = input('種目名'); const part = select('部位', parts, 'chest');
       form.append(name, part, button('作成する', async () => {
