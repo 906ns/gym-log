@@ -82,3 +82,13 @@ input[type="checkbox"] { display: inline-block; width: 44px; vertical-align: mid
 .rest { padding: 0; padding-bottom: env(safe-area-inset-bottom); }
 .rest-control { min-height: 64px; width: 100%; color: inherit; border: 0; border-radius: 0; background: var(--bg); font-size: 28px; }
 .rest-target { font-size: 34px; font-weight: 600; }
+.calendar { margin: var(--sp-5) 0; border-top: 1px solid var(--line); padding-top: var(--sp-3); }
+.calendar-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.calendar-heading h2 { font-size: 17px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; gap: 2px; }
+.weekday { color: var(--muted); font-size: 15px; padding: var(--sp-2) 0; }
+.calendar-day { min-height: 44px; padding: 4px; position: relative; border: 0; background: none; }
+.calendar-day:disabled { opacity: 1; color: var(--muted); }
+.calendar-day[aria-current] { outline: 1px solid var(--line); outline-offset: -1px; }
+.calendar-dot { position: absolute; bottom: 2px; left: calc(50% - 2px); width: 4px; height: 4px; background: var(--brass); border-radius: var(--r-pill); }
+.quiet { background: none; border: 0; color: var(--muted); }

@@ -1,3 +1,4 @@
+import { isPastEntry } from '../lib/calendar.js';
 import { showExerciseHistory } from './exercise-history.js';
 import { filterExercises } from '../lib/history.js';
 import { personalRecords, recordAchievements } from '../lib/records.js';
@@ -31,9 +32,9 @@ export async function renderSession(root, session, navigate) {
   root.replaceChildren(header, note, cards, button('＋ 種目を追加', openPicker, 'wide'), footer);
   let defaultRest = await repo.setting('default_rest_seconds', 90);
   function tick() {
-    elapsed.textContent = formatElapsed(elapsedSeconds(session.started_at, Date.now()));
+    elapsed.textContent = isPastEntry(session) ? '過去の記録' : formatElapsed(elapsedSeconds(session.started_at, Date.now()));
     const last = sets.at(-1);
-    footer.hidden = !last;
+    footer.hidden = !last || isPastEntry(session);
     requestAnimationFrame(() => root.style.setProperty('--rest-offset', `${footer.getBoundingClientRect().height}px`));
     if (!last) return;
     const seconds = elapsedSeconds(last.recorded_at, Date.now());

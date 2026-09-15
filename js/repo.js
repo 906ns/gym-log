@@ -1,3 +1,4 @@
+import { pastStart } from './lib/calendar.js';
 import { migrateExercise } from './lib/migration.js';
 import * as db from './db.js';
 import { newId } from './lib/id.js';
@@ -71,17 +72,20 @@ export async function currentSession() {
   }
   return rows[0] || null;
 }
-export async function startSession() {
-  if (await currentSession()) return currentSession();
+export async function startSession(date) {
+  const today = dateKey(new Date());
+  const startedAt = date ? pastStart(date, today) : Date.now();
+  const current = await currentSession();
+  if (current) { if (date) throw new Error('現在のセッションを終了してから過去の日付で記録してください'); return current; }
   // 同時タブからの開始も書き込みトランザクション内で一つにまとめる。
   let result;
   await db.transaction(['sessions'], 'readwrite', tx => {
     const store = tx.objectStore('sessions');
     store.index('by_started_at').openCursor(null, 'prev').onsuccess = event => {
       const cursor = event.target.result;
-      if (cursor && active(cursor.value) && cursor.value.ended_at === null) { result = cursor.value; return; }
+      if (cursor && active(cursor.value) && cursor.value.ended_at === null) { if (date) { tx.abort(); return; } result = cursor.value; return; }
       if (cursor) { cursor.continue(); return; }
-      result = stamp({ date: dateKey(new Date()), started_at: Date.now(), ended_at: null, condition_note: '' });
+      result = stamp({ date: date || today, started_at: startedAt, ended_at: null, condition_note: '' });
       store.put(result);
     };
   });
@@ -195,3 +199,6 @@ export async function exerciseHistory(exerciseId) {
   const sessions = await Promise.all([...new Set(sets.map(row => row.session_id))].map(id => db.get('sessions', id)));
   return { sets, sessions: sessions.filter(row => row && active(row)) };
 }
+export const sessionsBetween = (first, last) => db.scan('sessions', {
+  index: 'by_date', range: IDBKeyRange.bound(first, last), accept: active
+});
