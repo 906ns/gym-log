@@ -7,7 +7,10 @@ export function element(tag, text, className) {
 }
 export function showError(error) {
   console.error(error);
-  const node = document.querySelector('#error');
+  const openDialog = [...document.querySelectorAll('dialog[open]')].at(-1);
+  let node = openDialog?.querySelector('[role="alert"]');
+  if (openDialog && !node) { node = element('p'); node.setAttribute('role', 'alert'); openDialog.prepend(node); }
+  node ||= document.querySelector('#error');
   node.textContent = error.message || String(error);
   node.hidden = false;
   node.scrollIntoView({ block: 'nearest' });

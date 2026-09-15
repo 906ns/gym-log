@@ -20,3 +20,19 @@ test('型の不一致、重複日付、参照先の欠落を拒否する', () =>
   const bad = data(); bad.body_weights[0].weight = '68'; assert.throws(() => serialize(bad, 10));
   const missing = data(); missing.sets.push({ ...common, session_id: common.id, exercise_id: common.id }); assert.throws(() => serialize(missing, 10), /参照先/);
 });
+test('全ストアの往復と重量・レップの境界を検証する', () => {
+  const source = data();
+  source.exercises.push({ ...common, name: 'チェストプレス', name_en: 'Chest Press', body_part: 'chest', load_type: 'selectorized', weight_increment: 5, default_rest_seconds: 90, setup_note: '', sort_order: 0, is_archived: false });
+  source.sessions.push({ ...common, date: '2026-09-15', started_at: 1, ended_at: 2, condition_note: '' });
+  source.sets.push({ ...common, session_id: common.id, exercise_id: common.id, order: 1, weight: 45.25, reps: 10, note: '最後きつい', recorded_at: 1, is_warmup: false });
+  source.meta.push({ ...common, key: 'show_body_fat', value: true });
+  assert.deepEqual(parse(serialize(source, 10)).data, source);
+  for (const weight of [-1, 501, '45', .1]) {
+    const changed = structuredClone(source); changed.sets[0].weight = weight;
+    assert.throws(() => serialize(changed, 10), /セット/);
+  }
+  for (const reps of [0, 101, 1.5, '10']) {
+    const changed = structuredClone(source); changed.sets[0].reps = reps;
+    assert.throws(() => serialize(changed, 10), /セット/);
+  }
+});

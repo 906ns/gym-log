@@ -1,3 +1,4 @@
+import { createWakeLock } from './lib/wakelock.js';
 import * as repo from './repo.js';
 import { renderSettings } from './views/settings.js';
 import { renderHome } from './views/home.js';
@@ -5,8 +6,19 @@ import { renderSession } from './views/session.js';
 import { showError } from './views/ui.js';
 async function boot() {
   let cleanup = () => {};
+  let persistenceRequested = false;
+  const wake = createWakeLock();
+  repo.setWriteListener(() => {
+    if (persistenceRequested) return;
+    persistenceRequested = true;
+    // 初回のユーザー操作による保存成功直後に要求する。拒否されても記録は残る。
+    const request = navigator.storage?.persist?.();
+    Promise.resolve(request || false).then(granted => repo.saveSetting('persist_granted', granted, false)).catch(console.error);
+  });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') wake.acquire(); });
   async function navigate(name, session) {
     cleanup();
+    await wake.setActive(name === 'session');
     document.querySelector('#error').hidden = true;
     for (const view of document.querySelectorAll('main > section')) view.hidden = view.id !== `view-${name}`;
     const root = document.querySelector(`#view-${name}`);
