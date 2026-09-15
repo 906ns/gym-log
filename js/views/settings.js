@@ -48,7 +48,7 @@ export async function renderSettings(root, navigate) {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     }, 'wide'), label('バックアップから復元する', upload), element('p', `データの保持: ${persisted ? '許可' : '未許可'}`),
     element('p', `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`), element('h2', 'このアプリ'),
-    element('p', 'バージョン 1.0.0'), element('p', 'キャッシュ gym-log-v8'));
+    element('p', 'バージョン 1.0.0'), element('p', 'キャッシュ gym-log-v11-2'));
   upload.parentElement.classList.add('danger');
   if (!persisted) root.append(element('p', 'ホーム画面に追加して使い、定期的にバックアップを書き出してください。', 'muted'));
   function editExercise(existing) {

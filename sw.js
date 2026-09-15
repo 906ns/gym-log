@@ -1,5 +1,5 @@
-const CACHE = 'gym-log-v8';
-const SHELL = ['./', './index.html', './css/style.css', './js/app.js', './js/views/ui.js', './js/views/settings.js', './js/views/home.js', './js/views/session.js', './js/db.js', './js/repo.js', './js/lib/id.js', './js/lib/wakelock.js', './js/lib/datetime.js', './js/lib/calc.js', './js/lib/transfer.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './data/exercises.seed.json'];
+const CACHE = 'gym-log-v11-2';
+const SHELL = ['./', './index.html', './css/style.css', './manifest.webmanifest', './data/exercises.seed.json', './js/app.js', './js/db.js', './js/lib/calc.js', './js/lib/datetime.js', './js/lib/id.js', './js/lib/migration.js', './js/lib/transfer.js', './js/lib/units.js', './js/lib/wakelock.js', './js/repo.js', './js/views/home.js', './js/views/session.js', './js/views/settings.js', './js/views/ui.js', './icons/apple-touch-icon.png', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL))));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('gym-log-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', event => {
