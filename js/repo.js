@@ -187,3 +187,6 @@ export async function importBackup(text) {
   });
   onWrite();
 }
+export const exerciseSets = exerciseId => db.scan('sets', {
+  index: 'by_exercise_recorded', range: IDBKeyRange.bound([exerciseId, -Infinity], [exerciseId, Infinity]), accept: active
+});

@@ -1,10 +1,11 @@
+import { personalRecords, recordAchievements } from '../lib/records.js';
 import { weightControl } from './weight-control.js';
 import { resolveUnit, weightText, formatTotal } from '../lib/units.js';
 import { stopRepeating } from './pointer.js';
 import * as repo from '../repo.js';
 import { elapsedSeconds, formatElapsed, formatDate } from '../lib/datetime.js';
 import { maxWeight, bestMax, previousDifference } from '../lib/calc.js';
-import { element, button, numberControl, template, dialog, confirmAction, editText, parts, select, input, increments } from './ui.js';
+import { element, button, numberControl, template, dialog, confirmAction, editText, parts, select, input, increments, showError } from './ui.js';
 export async function renderSession(root, session, navigate) {
   const globalUnit = await repo.setting('weight_unit', 'kg');
   let selected = null;
@@ -73,6 +74,9 @@ export async function renderSession(root, session, navigate) {
     const reps = numberControl('回', initial?.reps ?? '', 1, 1, 100, 'numeric');
     weight.field.setAttribute('aria-label', '重量'); reps.field.setAttribute('aria-label', 'レップ');
     weight.field.classList.add('weight-input');
+    const prLine = element('p', '', 'muted pr-line');
+    card.append(prLine);
+    const badges = new Map();
     card.append(element('p', prev ? `前回 ${formatDate(prev.date)}` : 'この種目は初回です', 'muted'));
     for (const set of prev?.sets || []) {
       const row = template('tpl-prev-set-row');
@@ -96,8 +100,18 @@ export async function renderSession(root, session, navigate) {
       mark.setAttribute('aria-label', 'セットのメモを編集');
       row.append(mark);
       if (set.note) row.append(element('p', set.note, 'memo'));
+      const badge = element('span', '', 'pr-badge'); row.append(badge); badges.set(set.id, badge);
       card.append(row);
     }
+    repo.exerciseSets(exercise.id).then(history => {
+      if (!card.isConnected) return;
+      const pr = personalRecords(history);
+      prLine.textContent = pr.weightSet ? `自己ベスト ${weightText(pr.weightSet.weight, unit)} × ${pr.weightSet.reps} / 推定1RM ${formatTotal(pr.estimated, unit)}` : '';
+      for (const [id, updates] of recordAchievements(history)) {
+        const badge = badges.get(id);
+        if (badge && updates.length) { badge.textContent = '自己ベスト'; badge.setAttribute('aria-label', `自己ベスト: ${updates.join('、')}`); }
+      }
+    }).catch(showError);
     const controls = element('div', undefined, 'controls');
     controls.append(weight.group, increments(weight, exercise[incrementKey], async step => {
       const updated = await repo.saveExercise({ ...exercise, [incrementKey]: step }, exercise);

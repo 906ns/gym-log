@@ -72,3 +72,5 @@ input[type="checkbox"] { display: inline-block; width: 44px; vertical-align: mid
 .increments [aria-pressed="true"] { border-color: var(--brass); }
 .card > .controls { position: sticky; bottom: var(--rest-offset, 0px); z-index: 2; border-top: 1px solid var(--line); }
 .rest { z-index: 3; }
+.pr-badge { color: var(--brass); font-size: 15px; padding: var(--sp-1) var(--sp-2); }
+.pr-badge:empty, .pr-line:empty { display: none; }
