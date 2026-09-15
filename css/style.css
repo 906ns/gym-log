@@ -49,3 +49,10 @@ textarea { width: 100%; min-height: 100px; }
 .just-added { animation: added 120ms ease-out; }
 @keyframes added { from { max-height: 0; overflow: hidden; } to { max-height: 120px; } }
 @media (prefers-reduced-motion: reduce) { .just-added { animation: none; } }
+.body-card { display: block; width: 100%; border: 0; background: var(--surface); text-align: left; padding: var(--sp-5); margin-bottom: var(--sp-5); border-radius: var(--r-card); }
+.body-value { display: inline-block; font-size: 34px; line-height: 1.1; font-weight: 600; margin: var(--sp-3) var(--sp-4) var(--sp-2) 0; }
+.body-card > span:first-child { display: block; }
+.difference { color: var(--steel); }
+.history { display: block; width: 100%; min-height: 80px; padding: var(--sp-4) 0; text-align: left; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none; }
+.history span { display: block; }
+.settings-link { position: fixed; right: var(--sp-4); bottom: 0; padding-bottom: calc(var(--sp-2) + env(safe-area-inset-bottom)); }
