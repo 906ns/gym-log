@@ -56,3 +56,8 @@ textarea { width: 100%; min-height: 100px; }
 .history { display: block; width: 100%; min-height: 80px; padding: var(--sp-4) 0; text-align: left; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none; }
 .history span { display: block; }
 .settings-link { position: fixed; right: var(--sp-4); bottom: 0; padding-bottom: calc(var(--sp-2) + env(safe-area-inset-bottom)); }
+.settings-row { display: flex; align-items: center; gap: var(--sp-2); border-top: 1px solid var(--line); padding: var(--sp-2) 0; }
+.setting-name { flex: 1; background: none; border: 0; text-align: left; }
+label { display: block; margin: var(--sp-4) 0; }
+input[type="checkbox"] { display: inline-block; width: 44px; vertical-align: middle; accent-color: var(--steel); }
+#error { border: 1px solid var(--danger); padding: var(--sp-4); }

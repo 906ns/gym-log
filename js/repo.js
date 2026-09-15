@@ -31,7 +31,7 @@ export async function initialize() {
     // 複数タブの初回起動でも二重投入しないよう同じトランザクションで判定する。
     tx.objectStore('meta').index('by_key').get('seeded').onsuccess = event => {
       if (event.target.result?.value) return;
-      for (const exercise of seed.exercises) tx.objectStore('exercises').put(stamp(exercise));
+      for (const exercise of seed.exercises) tx.objectStore('exercises').put(stamp(exercise, exercise));
       for (const [key, value] of Object.entries(defaults)) tx.objectStore('meta').put(stamp({ key, value }));
     };
   });

@@ -1,7 +1,8 @@
 import * as repo from './repo.js';
+import { renderSettings } from './views/settings.js';
 import { renderHome } from './views/home.js';
 import { renderSession } from './views/session.js';
-import { element, button, showError } from './views/ui.js';
+import { showError } from './views/ui.js';
 async function boot() {
   let cleanup = () => {};
   async function navigate(name, session) {
@@ -11,10 +12,7 @@ async function boot() {
     const root = document.querySelector(`#view-${name}`);
     if (name === 'session') cleanup = await renderSession(root, session || await repo.currentSession(), navigate);
     else if (name === 'home') cleanup = await renderHome(root, navigate);
-    else {
-      root.replaceChildren(element('h1', '筋トレ記録'), button('今日のトレーニングを開始', async () => navigate('session', await repo.startSession()), 'primary'));
-      cleanup = () => {};
-    }
+    else cleanup = await renderSettings(root, navigate);
   }
   try {
     await repo.initialize();

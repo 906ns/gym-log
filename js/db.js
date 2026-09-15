@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 let connection;
 export function open() {
   if (connection) return connection;
@@ -18,6 +18,17 @@ export function open() {
           const store = db.createObjectStore(name, { keyPath: 'id' });
           for (const [index, path, unique = false] of indexes) store.createIndex(index, path, { unique });
         }
+      }
+      if (event.oldVersion < 2) {
+        // 既存のUUID主キーの設定も値を保持してkey主キーへ移す。
+        const tx = request.transaction;
+        tx.objectStore('meta').getAll().onsuccess = rowsEvent => {
+          const rows = rowsEvent.target.result;
+          db.deleteObjectStore('meta');
+          const store = db.createObjectStore('meta', { keyPath: 'key' });
+          store.createIndex('by_key', 'key', { unique: true });
+          for (const row of rows) store.put(row);
+        };
       }
     };
     request.onsuccess = () => {
