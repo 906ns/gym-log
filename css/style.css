@@ -17,3 +17,35 @@ button:active { transform: translateY(1px); background: var(--surface-2); }
 :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 button:disabled { opacity: .4; pointer-events: none; }
 .primary { background: var(--brass); color: var(--bg); min-height: 56px; width: 100%; font-weight: 600; }
+.card { background: var(--surface); padding: var(--sp-4); border-radius: var(--r-card); margin: var(--sp-4) 0; }
+.card-heading { width: 100%; background: var(--surface); border: 0; text-align: left; padding: 0; }
+.card-heading h2 { margin: 0 0 var(--sp-2); }
+.muted, .previous { color: var(--muted); font-size: 15px; }
+.previous { display: block; width: 100%; min-height: 48px; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: var(--surface); }
+.set-row { display: flex; flex-wrap: wrap; align-items: center; min-height: 48px; border-bottom: 1px solid var(--line); }
+.set-value { flex: 1; text-align: left; font-weight: 500; border: 0; background: var(--surface); }
+.has-note { color: var(--brass); }
+.memo, .inline-note { width: 100%; white-space: pre-wrap; user-select: text; }
+.controls { padding: var(--sp-3); background: var(--surface-2); margin-top: var(--sp-4); border-radius: var(--r-ctl); }
+.number-control { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.number-control button { min-width: 52px; height: 52px; }
+.number-control input { text-align: right; width: 100%; padding: var(--sp-1); }
+.weight-input { font-size: 44px; line-height: 1; font-weight: 600; }
+.unit { font-size: 13px; color: var(--text); }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+header h1 { flex: 1; }
+.wide { width: 100%; margin: var(--sp-2) 0; }
+.note { background: none; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; white-space: pre-wrap; user-select: text; }
+.rest { position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid var(--line); background: var(--bg); padding: var(--sp-4); padding-bottom: calc(var(--sp-4) + env(safe-area-inset-bottom)); font-size: 28px; color: var(--brass); text-align: center; }
+.rest.reached { color: var(--steel); }
+dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: var(--r-card); max-width: 560px; width: calc(100% - 24px); max-height: 85dvh; overflow: auto; padding: var(--sp-4); }
+dialog > button { margin-top: var(--sp-3); } dialog textarea, label input, label select { display: block; width: 100%; }
+textarea { width: 100%; min-height: 100px; }
+.sheet { margin: auto auto 0; padding-bottom: calc(var(--sp-4) + env(safe-area-inset-bottom)); }
+.filters { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-4) 0; }
+.filters button { border-radius: var(--r-pill); }
+.filters [aria-pressed="true"] { border-color: var(--brass); }
+.danger { color: var(--danger); }
+.just-added { animation: added 120ms ease-out; }
+@keyframes added { from { max-height: 0; overflow: hidden; } to { max-height: 120px; } }
+@media (prefers-reduced-motion: reduce) { .just-added { animation: none; } }
