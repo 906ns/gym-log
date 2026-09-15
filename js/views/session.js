@@ -1,9 +1,12 @@
+import { weightControl } from './weight-control.js';
+import { resolveUnit, weightText, formatTotal } from '../lib/units.js';
 import { stopRepeating } from './pointer.js';
 import * as repo from '../repo.js';
 import { elapsedSeconds, formatElapsed, formatDate } from '../lib/datetime.js';
 import { maxWeight, bestMax, previousDifference } from '../lib/calc.js';
 import { element, button, numberControl, template, dialog, confirmAction, editText, parts, select, input, increments } from './ui.js';
 export async function renderSession(root, session, navigate) {
+  const globalUnit = await repo.setting('weight_unit', 'kg');
   let selected = null;
   let added = [];
   let sets = [];
@@ -55,32 +58,34 @@ export async function renderSession(root, session, navigate) {
       const card = template('tpl-exercise-card');
       const toggle = button('', () => { selected = selected === id ? null : id; paint(); }, 'card-heading');
       toggle.setAttribute('aria-expanded', String(selected === id));
-      toggle.append(element('h2', exercise.name), element('span', `${today.length}セット / 最大${maxWeight(today)} kg`));
+      toggle.append(element('h2', exercise.name), element('span', `${today.length}セット / 最大${weightText(maxWeight(today), resolveUnit(exercise, globalUnit))}`));
       card.append(toggle);
-      if (today.length) card.append(element('p', `推定1RM ${bestMax(today)} kg${prev ? ` / 前回比 ${previousDifference(today, prev.sets)} kg` : ''}`, 'muted'));
+      if (today.length) card.append(element('p', `推定1RM ${formatTotal(bestMax(today), resolveUnit(exercise, globalUnit))}${prev ? ` / 前回比 ${formatTotal(previousDifference(today, prev.sets), resolveUnit(exercise, globalUnit))}` : ''}`, 'muted'));
       if (selected === id) expanded(card, exercise, today, prev);
       cards.append(card);
     }
   }
   function expanded(card, exercise, today, prev) {
     const initial = today.at(-1) || prev?.sets[0];
-    const weight = numberControl('kg', initial?.weight ?? '', exercise.increment_kg, 0, 500);
+    const unit = resolveUnit(exercise, globalUnit);
+    const incrementKey = `increment_${unit}`;
+    const weight = weightControl(initial?.weight, unit, exercise[incrementKey]);
     const reps = numberControl('回', initial?.reps ?? '', 1, 1, 100, 'numeric');
     weight.field.setAttribute('aria-label', '重量'); reps.field.setAttribute('aria-label', 'レップ');
     weight.field.classList.add('weight-input');
     card.append(element('p', prev ? `前回 ${formatDate(prev.date)}` : 'この種目は初回です', 'muted'));
     for (const set of prev?.sets || []) {
       const row = template('tpl-prev-set-row');
-      row.textContent = `${set.weight} kg × ${set.reps}${set.note ? ` 「${set.note}」` : ''} ↩`;
+      row.textContent = `${weightText(set.weight, unit)} × ${set.reps}${set.note ? ` 「${set.note}」` : ''} ↩`;
       row.setAttribute('aria-label', `${row.textContent} 前回の値を入力する`);
-      row.addEventListener('click', () => { weight.field.value = set.weight; reps.field.value = set.reps; });
+      row.addEventListener('click', () => { weight.setKg(set.weight); reps.field.value = set.reps; });
       card.append(row);
     }
     card.append(element('h2', '今日'));
     for (const set of today) {
       const row = template('tpl-set-row');
       if (set.id === lastAdded) row.classList.add('just-added');
-      row.append(button(`${set.weight} kg × ${set.reps}`, () => editSet(set), 'set-value'));
+      row.append(button(`${weightText(set.weight, unit)} × ${set.reps}`, () => editSet(set), 'set-value'));
       const mark = button(set.note ? '✎ ●' : '✎', () => {
         if (row.querySelector('textarea')) return;
         const editor = element('div', undefined, 'inline-note');
@@ -94,13 +99,13 @@ export async function renderSession(root, session, navigate) {
       card.append(row);
     }
     const controls = element('div', undefined, 'controls');
-    controls.append(weight.group, increments(weight, exercise.increment_kg, async step => {
-      const updated = await repo.saveExercise({ ...exercise, increment_kg: step }, exercise);
+    controls.append(weight.group, increments(weight, exercise[incrementKey], async step => {
+      const updated = await repo.saveExercise({ ...exercise, [incrementKey]: step }, exercise);
       Object.assign(exercise, updated);
     }), reps.group);
     if (exercise.load_type === 'plate') controls.append(element('p', '合計（両側）', 'muted'));
     const record = button('記録する', async () => {
-      const row = await repo.saveSet(session.id, exercise.id, weight.field.value, reps.field.value);
+      const row = await repo.saveSet(session.id, exercise.id, weight.kg(), reps.field.value);
       lastAdded = row.id; await reload();
     }, 'primary');
     for (const field of [weight.field, reps.field]) field.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); record.click(); } });
@@ -113,10 +118,10 @@ export async function renderSession(root, session, navigate) {
   function editSet(set) {
     const modal = dialog('dlg-editor', 'セットを編集');
     const exercise = exercises.find(row => row.id === set.exercise_id);
-    const weight = numberControl('kg', set.weight, exercise.increment_kg, 0, 500);
+    const weight = weightControl(set.weight, resolveUnit(exercise, globalUnit), exercise[`increment_${resolveUnit(exercise, globalUnit)}`]);
     const reps = numberControl('回', set.reps, 1, 1, 100, 'numeric');
     modal.append(weight.group, reps.group, button('保存する', async () => {
-      await repo.saveSet(session.id, set.exercise_id, weight.field.value, reps.field.value, set); modal.close(); lastAdded = null; await reload();
+      await repo.saveSet(session.id, set.exercise_id, weight.kg(), reps.field.value, set); modal.close(); lastAdded = null; await reload();
     }, 'primary'), button('セットを削除する', async () => {
       if (await confirmAction('このセットを削除しますか？')) { await repo.deleteSet(set); modal.close(); lastAdded = null; await reload(); }
     }, 'danger'), button('やめる', () => modal.close()));

@@ -1,3 +1,4 @@
+import { migrateExercise } from './lib/migration.js';
 import * as db from './db.js';
 import { newId } from './lib/id.js';
 import { dateKey, validDate } from './lib/datetime.js';
@@ -127,11 +128,14 @@ export const deleteSet = row => put('sets', { ...row, deleted_at: Date.now() }, 
 export async function saveExercise(fields, existing) {
   if (!fields.name?.trim()) throw new Error('種目名を入力してください');
   if (!['chest', 'back', 'shoulders', 'legs'].includes(fields.body_part)) throw new Error('部位を選んでください');
-  const increment = numberInput(fields.increment_kg ?? fields.weight_increment ?? 5, .25, 500);
+  fields = migrateExercise(fields);
+  const increment = numberInput(fields.increment_kg, .25, 500);
+  const incrementLb = numberInput(fields.increment_lb, .25, 500);
+  if (!['inherit', 'kg', 'lb'].includes(fields.display_unit)) throw new Error('重量単位を選んでください');
   if (!Number.isInteger(increment * 4)) throw new Error('重量刻みは0.25 kg刻みで入力してください');
   return put('exercises', {
     name_en: '', load_type: 'selectorized', setup_note: '', sort_order: Date.now(), is_archived: false,
-    ...fields, name: fields.name.trim(), increment_kg: increment, increment_lb: fields.increment_lb ?? 5, display_unit: fields.display_unit ?? 'inherit',
+    ...fields, name: fields.name.trim(), increment_kg: increment, increment_lb: incrementLb, display_unit: fields.display_unit ?? 'inherit',
     default_rest_seconds: numberInput(fields.default_rest_seconds ?? await setting('default_rest_seconds', 90), 1, 3600, true)
   }, existing);
 }
@@ -142,7 +146,7 @@ export async function reorderExercises(rows) {
 export const latestWeights = () => db.scan('body_weights', { index: 'by_date', direction: 'prev', accept: active, limit: 2 });
 export async function saveWeight(date, weight, bodyFat) {
   if (!validDate(date)) throw new Error('正しい日付を入力してください');
-  const fields = { date, weight: round(numberInput(weight, .1, 500), 1), body_fat: bodyFat === '' || bodyFat === null ? null : round(numberInput(bodyFat, 0, 100), 1), recorded_at: Date.now() };
+  const fields = { date, weight: round(numberInput(weight, .0001, 500), 4), body_fat: bodyFat === '' || bodyFat === null ? null : round(numberInput(bodyFat, 0, 100), 1), recorded_at: Date.now() };
   let row;
   await db.transaction(['body_weights'], 'readwrite', tx => {
     const store = tx.objectStore('body_weights');

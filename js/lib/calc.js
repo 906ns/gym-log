@@ -6,15 +6,14 @@ export function numberInput(value, min, max, integer = false) {
   return number;
 }
 export function setValues(weight, reps) {
-  const value = round(numberInput(weight, 0, 500));
-  if (!Number.isInteger(value * 4)) throw new Error('重量は0.25 kg刻みで入力してください');
+  const value = round(numberInput(weight, 0, 500), 4);
   return { weight: value, reps: numberInput(reps, 1, 100, true) };
 }
 const valid = (weight, reps) => Number.isFinite(weight) && weight >= 0 && weight <= 500 && Number.isInteger(reps) && reps >= 1 && reps <= 100;
 export const estimatedMax = (weight, reps) => valid(weight, reps) ? round(reps === 1 ? weight : weight * (1 + reps / 30), 1) : 0;
-export const setVolume = ({ weight, reps }) => valid(weight, reps) ? round(weight * reps) : 0;
+export const setVolume = ({ weight, reps }) => valid(weight, reps) ? round(weight * reps, 4) : 0;
 export const activeSets = sets => sets.filter(set => set.deleted_at === null);
-export const sessionVolume = sets => round(activeSets(sets).reduce((sum, set) => sum + setVolume(set), 0));
+export const sessionVolume = sets => round(activeSets(sets).reduce((sum, set) => sum + (valid(set.weight, set.reps) ? set.weight * set.reps : 0), 0), 4);
 export const maxWeight = sets => Math.max(0, ...activeSets(sets).map(set => set.weight));
 export const bestMax = sets => Math.max(0, ...activeSets(sets).map(set => estimatedMax(set.weight, set.reps)));
 export const previousDifference = (today, previous) => round(bestMax(today) - bestMax(previous), 1);

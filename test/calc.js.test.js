@@ -15,7 +15,7 @@ test('ボリュームと前回比は削除を除いて計算する', () => {
 });
 test('入力境界、丸め、刻みを検証する', () => {
   assert.deepEqual(setValues('0', '100'), { weight: 0, reps: 100 });
-  assert.deepEqual(setValues('45.249', '1'), { weight: 45.25, reps: 1 });
-  for (const args of [['', 1], [501, 1], [45, 0], [45, 1.2], [0.1, 10]]) assert.throws(() => setValues(...args));
+  assert.deepEqual(setValues('45.249', '1'), { weight: 45.249, reps: 1 });
+  for (const args of [['', 1], [501, 1], [45, 0], [45, 1.2]]) assert.throws(() => setValues(...args));
   assert.equal(increment('68.4', .1, 0, 500), 68.5);
 });
