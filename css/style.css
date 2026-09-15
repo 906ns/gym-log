@@ -79,3 +79,6 @@ input[type="checkbox"] { display: inline-block; width: 44px; vertical-align: mid
 .history-entry { border-top: 1px solid var(--line); padding: var(--sp-3) 0; }
 .history-entry h3 { font-size: 17px; font-weight: 500; }
 .sheet > input { width: 100%; margin-top: var(--sp-3); }
+.rest { padding: 0; padding-bottom: env(safe-area-inset-bottom); }
+.rest-control { min-height: 64px; width: 100%; color: inherit; border: 0; border-radius: 0; background: var(--bg); font-size: 28px; }
+.rest-target { font-size: 34px; font-weight: 600; }

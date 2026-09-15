@@ -45,7 +45,7 @@ export async function renderSettings(root, navigate) {
     button('＋ 種目を追加', () => editExercise(), 'wide'), element('h2', 'トレーニング'), element('p', '重量の表示単位'), unitControls,
     button(`目標休憩秒数 ${rest}秒`, () => {
       const modal = dialog('dlg-editor', '目標休憩秒数'); const field = input('秒数', rest, 'numeric');
-      modal.append(field, button('保存する', async () => { await repo.saveSetting('default_rest_seconds', numberInput(field.value, 1, 3600, true)); modal.close(); await refresh(); }, 'primary'), button('やめる', () => modal.close()));
+      modal.append(field, button('保存する', async () => { await repo.saveSetting('default_rest_seconds', numberInput(field.value, 0, 600, true)); modal.close(); await refresh(); }, 'primary'), button('やめる', () => modal.close()));
       modal.showModal();
     }, 'wide'), label('体脂肪率を入力する', fat), element('h2', 'データ'),
     button('バックアップを書き出す', async () => {
@@ -54,7 +54,7 @@ export async function renderSettings(root, navigate) {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     }, 'wide'), label('バックアップから復元する', upload), element('p', `データの保持: ${persisted ? '許可' : '未許可'}`),
     element('p', `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`), element('h2', 'このアプリ'),
-    element('p', 'バージョン 1.1.0'), element('p', 'キャッシュ gym-log-v11-6'));
+    element('p', 'バージョン 1.1.0'), element('p', 'キャッシュ gym-log-v11-7'));
   upload.parentElement.classList.add('danger');
   if (!persisted) root.append(element('p', 'ホーム画面に追加して使い、定期的にバックアップを書き出してください。', 'muted'));
   function editExercise(existing) {

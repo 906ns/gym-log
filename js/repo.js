@@ -136,7 +136,7 @@ export async function saveExercise(fields, existing) {
   return put('exercises', {
     name_en: '', load_type: 'selectorized', setup_note: '', sort_order: Date.now(), is_archived: false,
     ...fields, name: fields.name.trim(), increment_kg: increment, increment_lb: incrementLb, display_unit: fields.display_unit ?? 'inherit',
-    default_rest_seconds: numberInput(fields.default_rest_seconds ?? await setting('default_rest_seconds', 90), 1, 3600, true)
+    default_rest_seconds: numberInput(fields.default_rest_seconds ?? await setting('default_rest_seconds', 90), 0, 3600, true)
   }, existing);
 }
 export async function reorderExercises(rows) {

@@ -6,7 +6,7 @@ import { resolveUnit, weightText, formatTotal } from '../lib/units.js';
 import { stopRepeating } from './pointer.js';
 import * as repo from '../repo.js';
 import { elapsedSeconds, formatElapsed, formatDate } from '../lib/datetime.js';
-import { maxWeight, bestMax, previousDifference } from '../lib/calc.js';
+import { maxWeight, bestMax, previousDifference, increment } from '../lib/calc.js';
 import { element, button, numberControl, template, dialog, confirmAction, editText, parts, select, input, increments, showError } from './ui.js';
 export async function renderSession(root, session, navigate) {
   const globalUnit = await repo.setting('weight_unit', 'kg');
@@ -21,6 +21,7 @@ export async function renderSession(root, session, navigate) {
   const elapsed = element('span', '', 'muted');
   const cards = element('div');
   const footer = element('footer', '', 'rest');
+  const restButton = button('', openRest, 'rest-control'); footer.append(restButton);
   const note = button(session.condition_note || '体調をメモ', () => editText('体調をメモ', session.condition_note, async value => {
     session = await repo.saveSession(session, { condition_note: value }); note.textContent = value || '体調をメモ';
   }), 'note');
@@ -36,9 +37,9 @@ export async function renderSession(root, session, navigate) {
     requestAnimationFrame(() => root.style.setProperty('--rest-offset', `${footer.getBoundingClientRect().height}px`));
     if (!last) return;
     const seconds = elapsedSeconds(last.recorded_at, Date.now());
-    const target = exercises.find(row => row.id === last.exercise_id)?.default_rest_seconds || defaultRest;
-    footer.textContent = `休憩 ${formatElapsed(seconds)}${seconds >= target ? ` / ${target}秒` : ''}`;
-    footer.classList.toggle('reached', seconds >= target);
+    const target = exercises.find(row => row.id === (selected || last.exercise_id))?.default_rest_seconds ?? defaultRest;
+    restButton.textContent = `休憩 ${formatElapsed(seconds)}${target > 0 && seconds >= target ? ` / ${target}秒` : ''}`;
+    footer.classList.toggle('reached', target > 0 && seconds >= target);
   }
   async function reload() {
     [sets, exercises] = await Promise.all([repo.sessionSets(session.id), repo.exercises()]);
@@ -135,15 +136,29 @@ export async function renderSession(root, session, navigate) {
     }), 'note'));
   }
   function editSet(set) {
-    const modal = dialog('dlg-editor', 'セットを編集');
+    const modal = dialog('dlg-set', 'セットを編集');
+    const memo = element('textarea'); memo.value = set.note; memo.setAttribute('aria-label', 'セットのメモ');
     const exercise = exercises.find(row => row.id === set.exercise_id);
     const weight = weightControl(set.weight, resolveUnit(exercise, globalUnit), exercise[`increment_${resolveUnit(exercise, globalUnit)}`]);
     const reps = numberControl('回', set.reps, 1, 1, 100, 'numeric');
-    modal.append(weight.group, reps.group, button('保存する', async () => {
-      await repo.saveSet(session.id, set.exercise_id, weight.kg(), reps.field.value, set); modal.close(); lastAdded = null; await reload();
+    modal.append(weight.group, reps.group, memo, button('保存する', async () => {
+      await repo.saveSet(session.id, set.exercise_id, weight.kg(), reps.field.value, { ...set, note: memo.value }); modal.close(); lastAdded = null; await reload();
     }, 'primary'), button('セットを削除する', async () => {
       if (await confirmAction('このセットを削除しますか？')) { await repo.deleteSet(set); modal.close(); lastAdded = null; await reload(); }
     }, 'danger'), button('やめる', () => modal.close()));
+    modal.showModal();
+  }
+  function openRest() {
+    const exercise = exercises.find(row => row.id === (selected || sets.at(-1)?.exercise_id));
+    if (!exercise) return;
+    const modal = dialog('dlg-rest', `${exercise.name}の休憩`);
+    const value = element('p', `${exercise.default_rest_seconds}秒`, 'rest-target');
+    const adjust = async delta => {
+      const seconds = increment(exercise.default_rest_seconds, delta, 0, 600);
+      Object.assign(exercise, await repo.saveExercise({ ...exercise, default_rest_seconds: seconds }, exercise));
+      value.textContent = `${seconds}秒${seconds === 0 ? '（色の変化なし）' : ''}`; tick();
+    };
+    modal.append(value, button('−15秒', () => adjust(-15)), button('+15秒', () => adjust(15)), button('閉じる', () => modal.close()));
     modal.showModal();
   }
   async function openPicker() {
