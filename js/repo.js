@@ -26,7 +26,7 @@ export async function initialize() {
   const response = await fetch(new URL('../data/exercises.seed.json', import.meta.url));
   if (!response.ok) throw new Error('初期種目を読み込めません。再読み込みしてください');
   const seed = await response.json();
-  const defaults = { schema_version: 1, seeded: true, default_rest_seconds: 90, show_body_fat: true, persist_granted: false };
+  const defaults = { schema_version: 2, weight_unit: 'kg', seeded: true, default_rest_seconds: 90, show_body_fat: true, persist_granted: false };
   await db.transaction(['exercises', 'meta'], 'readwrite', tx => {
     // 複数タブの初回起動でも二重投入しないよう同じトランザクションで判定する。
     tx.objectStore('meta').index('by_key').get('seeded').onsuccess = event => {
@@ -127,11 +127,11 @@ export const deleteSet = row => put('sets', { ...row, deleted_at: Date.now() }, 
 export async function saveExercise(fields, existing) {
   if (!fields.name?.trim()) throw new Error('種目名を入力してください');
   if (!['chest', 'back', 'shoulders', 'legs'].includes(fields.body_part)) throw new Error('部位を選んでください');
-  const increment = numberInput(fields.weight_increment ?? 5, .25, 500);
+  const increment = numberInput(fields.increment_kg ?? fields.weight_increment ?? 5, .25, 500);
   if (!Number.isInteger(increment * 4)) throw new Error('重量刻みは0.25 kg刻みで入力してください');
   return put('exercises', {
     name_en: '', load_type: 'selectorized', setup_note: '', sort_order: Date.now(), is_archived: false,
-    ...fields, name: fields.name.trim(), weight_increment: increment,
+    ...fields, name: fields.name.trim(), increment_kg: increment, increment_lb: fields.increment_lb ?? 5, display_unit: fields.display_unit ?? 'inherit',
     default_rest_seconds: numberInput(fields.default_rest_seconds ?? await setting('default_rest_seconds', 90), 1, 3600, true)
   }, existing);
 }
@@ -176,7 +176,7 @@ export async function importBackup(text) {
       objectStore.clear();
       for (const row of data[store]) {
         if (store === 'meta' && Object.hasOwn(device, row.key)) continue;
-        objectStore.put(row);
+        objectStore.put(store === 'meta' && !row.id ? stamp(row) : row);
       }
     }
     for (const [key, value] of Object.entries(device)) tx.objectStore('meta').put(stamp({ key, value }));

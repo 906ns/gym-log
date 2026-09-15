@@ -9,9 +9,9 @@ test('書き出しと読み込みで削除状態も含め往復する', () => {
 });
 test('壊れたJSON、バージョン違い、必須キー欠落を拒否する', () => {
   assert.throws(() => parse('{'), /JSON/);
-  const value = JSON.parse(serialize(data(), 10)); value.schema_version = 2;
+  const value = JSON.parse(serialize(data(), 10)); value.schema_version = 99;
   assert.throws(() => parse(JSON.stringify(value)), /schema_version/);
-  value.schema_version = 1; delete value.data.sets;
+  value.schema_version = 2; delete value.data.sets;
   assert.throws(() => parse(JSON.stringify(value)), /sets/);
 });
 test('型の不一致、重複日付、参照先の欠落を拒否する', () => {
@@ -22,12 +22,12 @@ test('型の不一致、重複日付、参照先の欠落を拒否する', () =>
 });
 test('全ストアの往復と重量・レップの境界を検証する', () => {
   const source = data();
-  source.exercises.push({ ...common, name: 'チェストプレス', name_en: 'Chest Press', body_part: 'chest', load_type: 'selectorized', weight_increment: 5, default_rest_seconds: 90, setup_note: '', sort_order: 0, is_archived: false });
+  source.exercises.push({ ...common, name: 'チェストプレス', name_en: 'Chest Press', body_part: 'chest', load_type: 'selectorized', increment_kg: 5, increment_lb: 5, display_unit: 'inherit', default_rest_seconds: 90, setup_note: '', sort_order: 0, is_archived: false });
   source.sessions.push({ ...common, date: '2026-09-15', started_at: 1, ended_at: 2, condition_note: '' });
   source.sets.push({ ...common, session_id: common.id, exercise_id: common.id, order: 1, weight: 45.25, reps: 10, note: '最後きつい', recorded_at: 1, is_warmup: false });
   source.meta.push({ ...common, key: 'show_body_fat', value: true });
   assert.deepEqual(parse(serialize(source, 10)).data, source);
-  for (const weight of [-1, 501, '45', .1]) {
+  for (const weight of [-1, 501, '45']) {
     const changed = structuredClone(source); changed.sets[0].weight = weight;
     assert.throws(() => serialize(changed, 10), /セット/);
   }

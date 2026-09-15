@@ -1,4 +1,5 @@
-export const SCHEMA_VERSION = 2;
+import { migrateExercise } from './lib/migration.js';
+export const SCHEMA_VERSION = 3;
 let connection;
 export function open() {
   if (connection) return connection;
@@ -30,6 +31,34 @@ export function open() {
           for (const row of rows) store.put(row);
         };
       }
+      if (event.oldVersion < 3) {
+        const tx = request.transaction;
+        // 旧metaの再作成が完了した後に設定を補完するため種目カーソルに連鎖する。
+        tx.objectStore('exercises').openCursor().onsuccess = cursorEvent => {
+          const cursor = cursorEvent.target.result;
+          if (cursor) { cursor.update(migrateExercise(cursor.value)); cursor.continue(); return; }
+          const meta = tx.objectStore('meta');
+          if (!meta.indexNames.contains('by_key')) meta.createIndex('by_key', 'key', { unique: true });
+          meta.openCursor().onsuccess = metaEvent => {
+            const entry = metaEvent.target.result;
+            if (entry) {
+              const row = entry.value;
+              const now = row.updated_at ?? Date.now();
+              entry.update({ ...row, id: row.id || crypto.randomUUID(), created_at: row.created_at ?? now,
+                updated_at: now, deleted_at: row.deleted_at ?? null, value: row.key === 'schema_version' ? 2 : row.value });
+              entry.continue();
+              return;
+            }
+            for (const [key, value] of [['weight_unit', 'kg'], ['schema_version', 2]]) {
+              meta.index('by_key').get(key).onsuccess = settingEvent => {
+                if (settingEvent.target.result) return;
+                const now = Date.now();
+                meta.put({ key, value, id: crypto.randomUUID(), created_at: now, updated_at: now, deleted_at: null });
+              };
+            }
+          };
+        };
+      }
     };
     request.onsuccess = () => {
       const db = request.result;
@@ -37,7 +66,7 @@ export function open() {
       resolve(db);
     };
     request.onerror = () => { connection = null; reject(request.error); };
-    request.onblocked = () => { console.error('別のタブを閉じてから開き直してください'); };
+    request.onblocked = () => { console.error('別のタブを閉じてから開き直してください'); reject(new Error('更新のため、他のタブとホーム画面アプリを閉じて開き直してください')); connection = null; };
   });
   return connection;
 }
