@@ -1,3 +1,4 @@
+import { summary } from './lib/insights.js';
 import { pastStart } from './lib/calendar.js';
 import { migrateExercise } from './lib/migration.js';
 import * as db from './db.js';
@@ -74,16 +75,16 @@ export async function currentSession() {
 }
 export async function startSession(date) {
   const today = dateKey(new Date());
-  const startedAt = date ? pastStart(date, today) : Date.now();
+  const startedAt = date !== undefined ? pastStart(date, today) : Date.now();
   const current = await currentSession();
-  if (current) { if (date) throw new Error('現在のセッションを終了してから過去の日付で記録してください'); return current; }
+  if (current) { if (date !== undefined) throw new Error('現在のセッションを終了してから過去の日付で記録してください'); return current; }
   // 同時タブからの開始も書き込みトランザクション内で一つにまとめる。
   let result;
   await db.transaction(['sessions'], 'readwrite', tx => {
     const store = tx.objectStore('sessions');
     store.index('by_started_at').openCursor(null, 'prev').onsuccess = event => {
       const cursor = event.target.result;
-      if (cursor && active(cursor.value) && cursor.value.ended_at === null) { if (date) { tx.abort(); return; } result = cursor.value; return; }
+      if (cursor && active(cursor.value) && cursor.value.ended_at === null) { if (date !== undefined) { tx.abort(); return; } result = cursor.value; return; }
       if (cursor) { cursor.continue(); return; }
       result = stamp({ date: date || today, started_at: startedAt, ended_at: null, condition_note: '' });
       store.put(result);
@@ -159,8 +160,8 @@ export async function saveWeight(date, weight, bodyFat) {
   onWrite();
   return row;
 }
-export async function recentSessions() {
-  const rows = await db.scan('sessions', { index: 'by_started_at', direction: 'prev', accept: row => active(row) && row.ended_at !== null, limit: 5 });
+export async function recentSessions(limit = 5) {
+  const rows = await db.scan('sessions', { index: 'by_started_at', direction: 'prev', accept: row => active(row) && row.ended_at !== null, limit });
   return Promise.all(rows.map(async row => { const sets = await sessionSets(row.id); return { ...row, sets, exerciseCount: new Set(sets.map(set => set.exercise_id)).size, volume: sessionVolume(sets) }; }));
 }
 export async function counts() {
@@ -184,7 +185,7 @@ export async function importBackup(text) {
       objectStore.clear();
       for (const row of data[store]) {
         if (store === 'meta' && Object.hasOwn(device, row.key)) continue;
-        objectStore.put(store === 'meta' && !row.id ? stamp(row) : row);
+        objectStore.put(store === 'meta' ? { ...row, id: row.id || newId(), created_at: row.created_at ?? row.updated_at ?? Date.now(), updated_at: row.updated_at ?? Date.now(), deleted_at: row.deleted_at ?? null } : row);
       }
     }
     for (const [key, value] of Object.entries(device)) tx.objectStore('meta').put(stamp({ key, value }));
@@ -202,3 +203,8 @@ export async function exerciseHistory(exerciseId) {
 export const sessionsBetween = (first, last) => db.scan('sessions', {
   index: 'by_date', range: IDBKeyRange.bound(first, last), accept: active
 });
+export async function sessionSummary(session) {
+  const sets = await sessionSets(session.id);
+  const histories = await Promise.all([...new Set(sets.map(row => row.exercise_id))].map(exerciseSets));
+  return summary(session, sets, histories);
+}

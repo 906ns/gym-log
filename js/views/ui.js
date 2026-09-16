@@ -1,3 +1,4 @@
+import { icon } from './graphics.js';
 import { stepValue } from '../lib/input.js';
 import { bindRepeat } from './pointer.js';
 export function element(tag, text, className) {
@@ -19,6 +20,8 @@ export function showError(error) {
 export function button(text, action, className) {
   const node = element('button', text, className);
   node.type = 'button';
+  const symbol = { 'ホーム': 'home', '閉じる': 'close' }[text];
+  if (symbol) { node.prepend(icon(symbol)); node.classList.add('with-icon'); }
   node.addEventListener('click', async () => {
     if (node.disabled) return;
     node.disabled = true;

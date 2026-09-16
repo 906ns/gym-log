@@ -1,3 +1,5 @@
+import { showSummary } from './summary.js';
+import { icon } from './graphics.js';
 import { isPastEntry } from '../lib/calendar.js';
 import { showExerciseHistory } from './exercise-history.js';
 import { filterExercises } from '../lib/history.js';
@@ -27,7 +29,12 @@ export async function renderSession(root, session, navigate) {
     session = await repo.saveSession(session, { condition_note: value }); note.textContent = value || '体調をメモ';
   }), 'note');
   header.append(button('ホーム', () => navigate('home')), element('h1', formatDate(session.date)), elapsed, button('終了', async () => {
-    if (await confirmAction('トレーニングを終了しますか？')) { await repo.finishSession(session); await navigate('home'); }
+    if (await confirmAction('トレーニングを終了しますか？')) {
+      const completed = await repo.finishSession(session);
+      const data = completed.deleted_at === null ? await repo.sessionSummary(completed) : null;
+      await navigate('home');
+      if (data) showSummary(completed, data, globalUnit);
+    }
   }));
   root.replaceChildren(header, note, cards, button('＋ 種目を追加', openPicker, 'wide'), footer);
   let defaultRest = await repo.setting('default_rest_seconds', 90);
@@ -54,16 +61,24 @@ export async function renderSession(root, session, navigate) {
     stopRepeating();
     cards.replaceChildren();
     const ids = [...new Set([...sets.map(row => row.exercise_id), ...added])];
-    if (!ids.length) cards.append(element('p', '種目を追加して記録を始めましょう', 'muted'));
+    if (!ids.length) cards.append(element('p', '最初の種目を選びましょう', 'empty-message'), button('種目を選ぶ', openPicker, 'primary'));
     for (const id of ids) {
       const exercise = exercises.find(row => row.id === id);
       if (!exercise) continue;
       const today = sets.filter(row => row.exercise_id === id);
       const prev = previous.get(id);
       const card = template('tpl-exercise-card');
-      const toggle = button('', () => { selected = selected === id ? null : id; paint(); }, 'card-heading');
+      card.dataset.exercise = id;
+      card.classList.toggle('is-open', selected === id);
+      const toggle = button('', () => {
+        const height = card.getBoundingClientRect().height;
+        selected = selected === id ? null : id; lastAdded = null; paint(); tick();
+        const next = [...cards.children].find(node => node.dataset.exercise === id);
+        if (next && !matchMedia('(prefers-reduced-motion: reduce)').matches) next.animate([{ height: `${height}px` }, { height: `${next.getBoundingClientRect().height}px` }], { duration: 140, easing: 'ease-out' });
+      }, 'card-heading');
       toggle.setAttribute('aria-expanded', String(selected === id));
       toggle.append(element('span', `${today.length}セット / 最大${weightText(maxWeight(today), resolveUnit(exercise, globalUnit))}`));
+      toggle.append(icon('chevron'));
       const name = button(exercise.name, () => showExerciseHistory(exercise, resolveUnit(exercise, globalUnit), reload), 'exercise-name');
       const heading = element('h2'); heading.append(name);
       toggle.setAttribute('aria-label', `${exercise.name}の入力を${selected === id ? '閉じる' : '開く'}`);
@@ -87,23 +102,24 @@ export async function renderSession(root, session, navigate) {
     card.append(element('p', prev ? `前回 ${formatDate(prev.date)}` : 'この種目は初回です', 'muted'));
     for (const set of prev?.sets || []) {
       const row = template('tpl-prev-set-row');
-      row.textContent = `${weightText(set.weight, unit)} × ${set.reps}${set.note ? ` 「${set.note}」` : ''} ↩`;
+      row.textContent = `${weightText(set.weight, unit)} × ${set.reps}${set.note ? ` 「${set.note}」` : ''}`;
       row.setAttribute('aria-label', `${row.textContent} 前回の値を入力する`);
       row.addEventListener('click', () => { weight.setKg(set.weight); reps.field.value = set.reps; });
       card.append(row);
     }
-    card.append(element('h2', '今日'));
+    card.append(element('h2', isPastEntry(session) ? 'この日の記録' : '今日'));
     for (const set of today) {
       const row = template('tpl-set-row');
       if (set.id === lastAdded) row.classList.add('just-added');
       row.append(button(`${weightText(set.weight, unit)} × ${set.reps}`, () => editSet(set), 'set-value'));
-      const mark = button(set.note ? '✎ ●' : '✎', () => {
+      const mark = button('', () => {
         if (row.querySelector('textarea')) return;
         const editor = element('div', undefined, 'inline-note');
         const field = element('textarea'); field.value = set.note; field.setAttribute('aria-label', 'セットのメモ');
         editor.append(field, button('保存する', async () => { await repo.saveSetNote(set, field.value); lastAdded = null; await reload(); }), button('やめる', () => editor.remove()));
         row.append(editor);
       }, set.note ? 'has-note' : '');
+      mark.append(icon('note'));
       mark.setAttribute('aria-label', 'セットのメモを編集');
       row.append(mark);
       if (set.note) row.append(element('p', set.note, 'memo'));

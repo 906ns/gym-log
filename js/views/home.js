@@ -1,4 +1,6 @@
-import { monthGrid, shiftMonth } from '../lib/calendar.js';
+import { chart, icon } from './graphics.js';
+import { weekStart, daysBetween } from '../lib/insights.js';
+import { monthGrid, shiftMonth, isPastEntry } from '../lib/calendar.js';
 import { weightControl } from './weight-control.js';
 import { weightText, formatTotal, kgToLb, resolveUnit } from '../lib/units.js';
 import * as repo from '../repo.js';
@@ -6,9 +8,24 @@ import { dateKey, formatDate, elapsedSeconds, formatElapsed } from '../lib/datet
 import { signedDifference } from '../lib/calc.js';
 import { element, button, numberControl, input, label, template, dialog, confirmAction } from './ui.js';
 export async function renderHome(root, navigate) {
-  const [weights, current, history, showFat] = await Promise.all([repo.latestWeights(), repo.currentSession(), repo.recentSessions(), repo.setting('show_body_fat', true)]);
+  const [weights, current, history, showFat] = await Promise.all([repo.latestWeights(), repo.currentSession(), repo.recentSessions(8), repo.setting('show_body_fat', true)]);
   const unit = await repo.setting('weight_unit', 'kg');
   const latest = weights[0];
+  const today = dateKey(new Date());
+  const week = (await repo.sessionsBetween(weekStart(today), today)).filter(row => row.ended_at !== null);
+  const overview = element('header', undefined, 'week-overview');
+  const heading = element('div', undefined, 'overview-heading');
+  const settings = button('', () => navigate('settings'), 'icon-button'); settings.append(icon('settings')); settings.setAttribute('aria-label', '設定');
+  heading.append(element('h1', '今週のトレーニング'), settings);
+  const number = element('div', undefined, 'week-number'); number.append(element('strong', String(week.length)), element('span', '回'));
+  const last = history[0] ? `前回から ${daysBetween(history[0].date, today)}日` : '最初の記録を始めましょう';
+  overview.append(heading, number, element('p', last, 'muted'));
+  if (history.length) {
+    const trend = element('div', undefined, 'home-trend');
+    trend.append(element('span', '最近8回の総ボリューム', 'muted'), chart([...history].reverse().map(row => row.volume), '直近8セッションの総ボリュームの推移'));
+    overview.append(trend);
+  }
+
   const body = button('', openBody, 'body-card');
   if (!latest) body.textContent = '体重を記録する';
   else {
@@ -19,8 +36,8 @@ export async function renderHome(root, navigate) {
   }
   const start = button(current ? 'トレーニングを続ける' : '今日のトレーニングを開始', async () => navigate('session', current || await repo.startSession()), 'primary');
   const historyList = element('div');
-  if (!history.length) historyList.append(element('p', 'まだ記録がありません', 'muted'));
-  for (const session of history) {
+  if (!history.length) historyList.append(element('p', '今日の1セットを、ここに。', 'empty-message'), button('トレーニングを始める', async () => navigate('session', current || await repo.startSession()), 'wide'));
+  for (const session of history.slice(0, 5)) {
     const row = template('tpl-history-row');
     row.append(element('span', formatDate(session.date)), element('span', `${session.exerciseCount}種目 / ${formatTotal(session.volume, unit)}`));
     if (session.condition_note) row.append(element('span', session.condition_note.split('\n')[0], 'muted'));
@@ -37,11 +54,11 @@ export async function renderHome(root, navigate) {
   }, 'wide quiet');
   past.disabled = Boolean(current);
   if (current) past.title = '現在のセッションを終了してから記録できます';
-  root.replaceChildren(element('h1', '筋トレ記録'), body, calendar, start, past, element('h2', '最近'), historyList, button('設定', () => navigate('settings'), 'settings-link'));
+  root.replaceChildren(overview, body, calendar, start, past, element('h2', '最近の記録'), historyList);
   await renderMonth(dateKey(new Date()));
   let timer;
   if (current) {
-    const update = () => { start.textContent = `トレーニングを続ける ${formatElapsed(elapsedSeconds(current.started_at, Date.now()))}`; };
+    const update = () => { start.textContent = `トレーニングを続ける${isPastEntry(current) ? '（過去の記録）' : ` ${formatElapsed(elapsedSeconds(current.started_at, Date.now()))}`}`; };
     update(); timer = setInterval(update, 1000);
   }
   async function renderMonth(key) {

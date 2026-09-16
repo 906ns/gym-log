@@ -1,3 +1,5 @@
+import { chart } from './graphics.js';
+import { maxWeight } from '../lib/calc.js';
 import * as repo from '../repo.js';
 import { groupHistory } from '../lib/history.js';
 import { personalRecords } from '../lib/records.js';
@@ -13,6 +15,7 @@ export async function showExerciseHistory(exercise, unit, onChange) {
   if (pr.weightSet) modal.append(element('p', `最大重量 ${weightText(pr.weightSet.weight, unit)} × ${pr.weightSet.reps}`),
     element('p', `推定1RM ${formatTotal(pr.estimated, unit)}`), element('p', `最大ボリューム ${formatTotal(pr.volume, unit)}`));
   else modal.append(element('p', '最初のセットを記録しましょう', 'muted'));
+  if (history.length) modal.append(chart([...history].reverse().map(group => maxWeight(group.sets)), '直近10セッションの最大重量の推移'));
   modal.append(element('h2', '履歴'));
   for (const group of history) {
     const row = element('section', undefined, 'history-entry');
