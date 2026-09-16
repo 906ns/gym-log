@@ -1,4 +1,4 @@
-import { listRow, sectionHeading } from './list.js';
+import { listRow, sectionHeading, emptyState } from './list.js';
 import { showSummary } from './summary.js';
 import { icon } from './graphics.js';
 import { isPastEntry } from '../lib/calendar.js';
@@ -196,6 +196,7 @@ export async function renderSession(root, session, navigate) {
       list.replaceChildren();
       const matches = filterExercises(rows, part, search.value);
       list.append(sectionHeading(part ? parts[part] : '種目', matches.length));
+      if (!matches.length) list.append(emptyState('search', '該当する種目がありません'));
       for (const exercise of matches) {
         list.append(listRow({ title: exercise.name, symbol: exercise.body_part, value: sets.some(row => row.exercise_id === exercise.id) ? '記録済' : '', action: async () => {
           added.push(exercise.id); selected = exercise.id; modal.close(); await reload();

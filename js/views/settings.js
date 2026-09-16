@@ -57,7 +57,14 @@ export async function renderSettings(root, navigate) {
     listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), sectionHeading('データ', 4),
     exportRow, importRow, upload, listRow({ title: 'データの保持', value: persisted ? '許可' : '未許可' }),
     listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), sectionHeading('このアプリ', 2),
-    listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-v12-8a' }));
+    listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-v12-9a' }));
+  let section;
+  for (const node of [...root.children]) {
+    if (node.classList.contains('section-heading')) {
+      section = element('section', undefined, 'list-section'); root.insertBefore(section, node); section.append(node);
+    } else if (node === list) section = null;
+    else if (section) section.append(node);
+  }
   if (!persisted) root.append(element('p', 'ホーム画面に追加して使い、定期的にバックアップを書き出してください。', 'muted'));
   function editExercise(existing) {
     const modal = dialog('dlg-exercise', existing ? '種目を編集' : '種目を追加');

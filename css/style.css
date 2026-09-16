@@ -253,3 +253,11 @@ button:active, input:active, select:active, textarea:active, a:active, label:act
 
 #tab-bar, #mini-bar { position: relative; border-top: 0; }
 #tab-bar::before, #mini-bar::before { content: ''; position: absolute; top: 0; left: 0; right: 0; border-top: 1px solid var(--line); pointer-events: none; }
+
+.empty-state { padding: var(--sp-6) 0 var(--sp-5); text-align: center; }
+.empty-state > .icon { width: 48px; height: 48px; color: var(--line); }
+.empty-state p { margin: var(--sp-4) 0 0; font-size: 17px; }
+
+#app-content { padding: 0; }
+#app-content > section { padding: var(--sp-4); }
+#app-content > #error { margin: var(--sp-4); }

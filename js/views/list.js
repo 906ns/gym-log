@@ -29,3 +29,8 @@ export function groupedList(rows, keyOf, titleOf, render) {
   }
   return list;
 }
+export function emptyState(symbol, message) {
+  const state = element('div', undefined, 'empty-state');
+  state.append(icon(symbol), element('p', message));
+  return state;
+}
