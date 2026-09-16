@@ -1,3 +1,4 @@
+import { showSessionHistory } from './session-history.js';
 import { chart, icon } from './graphics.js';
 import { weekStart, daysBetween } from '../lib/insights.js';
 import { monthGrid, shiftMonth, isPastEntry } from '../lib/calendar.js';
@@ -34,15 +35,6 @@ export async function renderHome(root, navigate) {
     if (latest.body_fat !== null) body.append(element('p', `体脂肪率 ${latest.body_fat.toFixed(1)}%`, 'muted'));
   }
   const start = button(current ? 'トレーニングを続ける' : '今日のトレーニングを開始', async () => navigate('session', current || await repo.startSession()), 'primary');
-  const historyList = element('div');
-  if (!history.length) historyList.append(element('p', '今日の1セットを、ここに。', 'empty-message'), button('トレーニングを始める', async () => navigate('session', current || await repo.startSession()), 'wide'));
-  for (const session of history.slice(0, 5)) {
-    const row = template('tpl-history-row');
-    row.append(element('span', formatDate(session.date)), element('span', `${session.exerciseCount}種目 / ${formatTotal(session.volume, unit)}`));
-    if (session.condition_note) row.append(element('span', session.condition_note.split('\n')[0], 'muted'));
-    row.addEventListener('click', () => openHistory(session).catch(error => { console.error(error); alert(error.message); }));
-    historyList.append(row);
-  }
   const calendar = element('section', undefined, 'calendar');
   const past = button('過去の日付で記録する', () => {
     const modal = dialog('dlg-editor', '過去の日付で記録する');
@@ -53,7 +45,7 @@ export async function renderHome(root, navigate) {
   }, 'wide quiet');
   past.disabled = Boolean(current);
   if (current) past.title = '現在のセッションを終了してから記録できます';
-  root.replaceChildren(overview, body, calendar, start, past, element('h2', '最近の記録'), historyList);
+  root.replaceChildren(overview, body, calendar, start, past);
   await renderMonth(dateKey(new Date()));
   let timer;
   if (current) {
@@ -86,7 +78,7 @@ export async function renderHome(root, navigate) {
   }
   async function openDaySession(session) {
     if (session.ended_at === null) await navigate('session', session);
-    else await openHistory({ ...session, sets: await repo.sessionSets(session.id) });
+    else await showSessionHistory({ ...session, sets: await repo.sessionSets(session.id) }, () => navigate('home')); 
   }
   function openBody() {
     const modal = dialog('dlg-body-weight', '体重を記録');
@@ -99,21 +91,6 @@ export async function renderHome(root, navigate) {
     modal.append(button('記録する', async () => {
       await repo.saveWeight(date.value, weight.kg(), showFat ? fat.field.value : null); modal.close(); await navigate('home');
     }, 'primary'), button('やめる', () => modal.close()));
-    modal.showModal();
-  }
-  async function openHistory(session) {
-    const exercises = await repo.exercises();
-    const modal = dialog('dlg-editor', formatDate(session.date));
-    if (session.condition_note) modal.append(element('p', session.condition_note, 'memo'));
-    for (const id of new Set(session.sets.map(row => row.exercise_id))) {
-      modal.append(element('h2', exercises.find(row => row.id === id)?.name || '種目'));
-      for (const set of session.sets.filter(row => row.exercise_id === id)) modal.append(element('p', `${weightText(set.weight, resolveUnit(exercises.find(row => row.id === id), unit))} × ${set.reps}${set.note ? ` 「${set.note}」` : ''}`, 'memo'));
-    }
-    modal.append(button('閉じる', () => modal.close()), button('セッションを削除する', async () => {
-      if (await confirmAction('このセッションとセットを削除しますか？')) {
-        await repo.deleteSession(session); modal.close(); await navigate('home');
-      }
-    }, 'danger'));
     modal.showModal();
   }
   return () => clearInterval(timer);

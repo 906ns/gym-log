@@ -1,3 +1,4 @@
+import { renderHistory } from './views/history.js';
 import { createShell } from './views/shell.js';
 import { stopRepeating } from './views/pointer.js';
 import { createWakeLock } from './lib/wakelock.js';
@@ -29,7 +30,7 @@ async function boot() {
     if (name === 'session') cleanup = await renderSession(root, session || await repo.currentSession(), navigate);
     else if (name === 'home') cleanup = await renderHome(root, navigate);
     else if (name === 'settings') cleanup = await renderSettings(root, navigate);
-    else { root.replaceChildren(); cleanup = () => {}; }
+    else cleanup = await renderHistory(root, navigate);
   }
   try {
     await repo.initialize();
