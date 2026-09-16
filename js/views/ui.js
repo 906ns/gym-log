@@ -18,9 +18,9 @@ export function showError(error) {
   node.scrollIntoView({ block: 'nearest' });
 }
 export function button(text, action, className) {
-  const node = element('button', text, className);
+  const node = element('button', text.replace(/^＋ /, ''), className);
   node.type = 'button';
-  const symbol = { 'ホーム': 'home', '閉じる': 'close' }[text];
+  const symbol = { 'ホーム': 'home', '閉じる': 'close', '戻る': 'previous' }[text] || (text.startsWith('＋ ') ? 'add' : text.endsWith('を削除する') ? 'delete' : null);
   if (symbol) { node.prepend(icon(symbol)); node.classList.add('with-icon'); }
   node.addEventListener('click', async () => {
     if (node.disabled) return;

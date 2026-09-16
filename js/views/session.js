@@ -30,7 +30,7 @@ export async function renderSession(root, session, navigate) {
   const note = button(session.condition_note || '体調をメモ', () => editText('体調をメモ', session.condition_note, async value => {
     session = await repo.saveSession(session, { condition_note: value }); note.textContent = value || '体調をメモ';
   }), 'note');
-  const close = button('', () => navigate('close-session'), 'icon-button'); close.append(icon('chevron')); close.setAttribute('aria-label', 'セッションを閉じる');
+  const close = button('', () => navigate('close-session'), 'icon-button'); close.append(icon('close')); close.setAttribute('aria-label', 'セッションを閉じる');
   header.append(close, element('h1', formatDate(session.date)), elapsed, button('終了', async () => {
     if (await confirmAction('トレーニングを終了しますか？')) {
       const completed = await repo.finishSession(session);
@@ -81,7 +81,7 @@ export async function renderSession(root, session, navigate) {
       }, 'card-heading');
       toggle.setAttribute('aria-expanded', String(selected === id));
       toggle.append(element('span', `${today.length}セット / 最大${weightText(maxWeight(today), resolveUnit(exercise, globalUnit))}`));
-      toggle.append(icon('chevron'));
+      toggle.append(icon('close'));
       const name = button(exercise.name, () => showExerciseHistory(exercise, resolveUnit(exercise, globalUnit), reload), 'exercise-name');
       const heading = element('h2'); heading.append(name);
       toggle.setAttribute('aria-label', `${exercise.name}の入力を${selected === id ? '閉じる' : '開く'}`);
@@ -187,6 +187,7 @@ export async function renderSession(root, session, navigate) {
     const filters = element('div', undefined, 'filters');
     const list = element('div');
     const search = input('種目名で検索'); search.placeholder = '種目名・英語名で検索';
+    const searchBox = element('div', undefined, 'search-field'); searchBox.append(icon('search'), search);
     let selectedPart = '';
     search.addEventListener('input', () => filter(selectedPart));
     function filter(part) {
@@ -204,7 +205,7 @@ export async function renderSession(root, session, navigate) {
     for (const [key, text] of Object.entries({ '': 'すべて', ...parts })) {
       const control = button(text, () => filter(key)); control.dataset.part = key; filters.append(control);
     }
-    modal.append(button('閉じる', () => modal.close()), search, filters, list, button('＋ 種目を新規作成', () => {
+    modal.append(button('閉じる', () => modal.close()), searchBox, filters, list, button('＋ 種目を新規作成', () => {
       const form = dialog('dlg-editor', '種目を新規作成');
       const name = input('種目名'); const part = select('部位', parts, 'chest');
       form.append(name, part, button('作成する', async () => {

@@ -4,7 +4,7 @@ import { element, button, dialog } from './ui.js';
 import { icon } from './graphics.js';
 export function showSummary(session, data, unit) {
   const modal = dialog('dlg-summary', 'トレーニングを記録しました');
-  const seal = element('div', undefined, 'summary-seal'); seal.append(icon('check'));
+  const seal = element('div', undefined, 'summary-seal'); seal.append(icon('history'));
   const volume = element('div', undefined, 'summary-volume');
   volume.append(element('span', '総ボリューム', 'muted'), element('strong', formatTotal(data.volume, unit)));
   const grid = element('dl', undefined, 'summary-grid');
