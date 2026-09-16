@@ -1,3 +1,4 @@
+import { listRow } from './list.js';
 import { showSummary } from './summary.js';
 import { icon } from './graphics.js';
 import { isPastEntry } from '../lib/calendar.js';
@@ -193,9 +194,9 @@ export async function renderSession(root, session, navigate) {
       for (const node of filters.children) node.setAttribute('aria-pressed', String(node.dataset.part === part));
       list.replaceChildren();
       for (const exercise of filterExercises(rows, part, search.value)) {
-        list.append(button(`${exercise.name}${sets.some(row => row.exercise_id === exercise.id) ? ' 記録済' : ''}`, async () => {
+        list.append(listRow({ title: exercise.name, symbol: exercise.body_part, value: sets.some(row => row.exercise_id === exercise.id) ? '記録済' : '', action: async () => {
           added.push(exercise.id); selected = exercise.id; modal.close(); await reload();
-        }, 'wide'));
+        } }));
       }
     }
     for (const [key, text] of Object.entries({ '': 'すべて', ...parts })) {

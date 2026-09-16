@@ -1,3 +1,4 @@
+import { listRow } from './list.js';
 import * as repo from '../repo.js';
 import { formatDate } from '../lib/datetime.js';
 import { formatTotal } from '../lib/units.js';
@@ -9,9 +10,7 @@ export async function renderHistory(root, navigate) {
   root.replaceChildren();
   rows.sort((a, b) => b.date.localeCompare(a.date) || b.started_at - a.started_at);
   for (const session of rows) {
-    const row = button('', () => showSessionHistory(session, () => navigate('history')), 'history');
-    row.append(element('span', formatDate(session.date)), element('span', `${session.exerciseCount}種目 / ${formatTotal(session.volume, unit)}`));
-    if (session.condition_note) row.append(element('span', session.condition_note.split('\n')[0], 'muted'));
+    const row = listRow({ title: formatDate(session.date), subtitle: session.condition_note.split('\n')[0] || `${session.exerciseCount}種目`, value: formatTotal(session.volume, unit), symbol: 'history', action: () => showSessionHistory(session, () => navigate('history')) });
     root.append(row);
   }
   return () => {};
