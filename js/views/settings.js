@@ -1,4 +1,4 @@
-import { listRow } from './list.js';
+import { listRow, groupedList, sectionHeading } from './list.js';
 import * as repo from '../repo.js';
 import { dateKey } from '../lib/datetime.js';
 import { numberInput } from '../lib/calc.js';
@@ -12,10 +12,7 @@ export async function renderSettings(root, navigate) {
     control.setAttribute('aria-pressed', String(unit === value)); unitControls.append(control);
   }
   const refresh = () => navigate('settings');
-  const list = element('div');
-  for (const exercise of exercises) {
-    list.append(listRow({ title: exercise.name, subtitle: exercise.is_archived ? 'アーカイブ' : exercise.name_en, value: parts[exercise.body_part], symbol: exercise.body_part, action: () => editExercise(exercise) }));
-  }
+  const list = groupedList(exercises, row => row.body_part, row => parts[row.body_part], exercise => listRow({ title: exercise.name, subtitle: exercise.is_archived ? 'アーカイブ' : exercise.name_en, value: { selectorized: 'セレクタライズ', plate: 'プレート', bodyweight: '自重' }[exercise.load_type], symbol: exercise.body_part, action: () => editExercise(exercise) }));
   const fat = input('体脂肪率を入力する'); fat.type = 'checkbox'; fat.checked = showFat;
   fat.addEventListener('change', () => repo.saveSetting('show_body_fat', fat.checked).catch(showError));
   const upload = input('バックアップファイル'); upload.type = 'file'; upload.accept = '.json,application/json';
@@ -44,13 +41,13 @@ export async function renderSettings(root, navigate) {
     modal.append(field, button('保存する', async () => { await repo.saveSetting('default_rest_seconds', numberInput(field.value, 0, 600, true)); modal.close(); await refresh(); }, 'primary'), button('やめる', () => modal.close()));
     modal.showModal();
   } });
-  root.replaceChildren(element('h2', '種目'), list,
-    listRow({ title: '種目を追加', symbol: 'add', action: () => editExercise() }), element('h2', 'トレーニング'),
+  root.replaceChildren(list,
+    listRow({ title: '種目を追加', symbol: 'add', action: () => editExercise() }), sectionHeading('トレーニング', 3),
     listRow({ title: '重量の表示単位', symbol: 'weight', control: unitControls }), restRow,
-    listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), element('h2', 'データ'),
+    listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), sectionHeading('データ', 4),
     exportRow, importRow, upload, listRow({ title: 'データの保持', value: persisted ? '許可' : '未許可' }),
-    listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), element('h2', 'このアプリ'),
-    listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-v12-5' }));
+    listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), sectionHeading('このアプリ', 2),
+    listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-v12-6' }));
   if (!persisted) root.append(element('p', 'ホーム画面に追加して使い、定期的にバックアップを書き出してください。', 'muted'));
   function editExercise(existing) {
     const modal = dialog('dlg-editor', existing ? '種目を編集' : '種目を追加');

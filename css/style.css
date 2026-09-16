@@ -178,3 +178,7 @@ html, body { height: 100%; overflow: hidden; }
 .list-row > .increments { display: flex; margin: 0; }
 .list-row > .increments button { min-width: 44px; }
 .reorder-controls { display: flex; gap: var(--sp-3); }
+
+.section-heading { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); min-height: 36px; margin: var(--sp-5) 0 0; padding: var(--sp-2) 0; background: var(--bg); color: var(--muted); font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--line); }
+.list-section:first-child > .section-heading { margin-top: 0; }
+.section-count { font-variant-numeric: tabular-nums; }

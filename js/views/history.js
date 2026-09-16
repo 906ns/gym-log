@@ -1,4 +1,4 @@
-import { listRow } from './list.js';
+import { listRow, groupedList } from './list.js';
 import * as repo from '../repo.js';
 import { formatDate } from '../lib/datetime.js';
 import { formatTotal } from '../lib/units.js';
@@ -9,9 +9,6 @@ export async function renderHistory(root, navigate) {
   const unit = await repo.setting('weight_unit', 'kg');
   root.replaceChildren();
   rows.sort((a, b) => b.date.localeCompare(a.date) || b.started_at - a.started_at);
-  for (const session of rows) {
-    const row = listRow({ title: formatDate(session.date), subtitle: session.condition_note.split('\n')[0] || `${session.exerciseCount}種目`, value: formatTotal(session.volume, unit), symbol: 'history', action: () => showSessionHistory(session, () => navigate('history')) });
-    root.append(row);
-  }
+  root.append(groupedList(rows, row => row.date.slice(0, 7), row => `${row.date.slice(0, 4)}年${Number(row.date.slice(5, 7))}月`, session => listRow({ title: formatDate(session.date), subtitle: session.condition_note.split('\n')[0] || `${session.exerciseCount}種目`, value: formatTotal(session.volume, unit), symbol: 'history', action: () => showSessionHistory(session, () => navigate('history')) })));
   return () => {};
 }
