@@ -9,6 +9,7 @@ import { renderSession } from './views/session.js';
 import { showError } from './views/ui.js';
 async function boot() {
   let cleanup = () => {};
+  let selectedTab = 'home';
   let persistenceRequested = false;
   const wake = createWakeLock();
   const shell = createShell(navigate);
@@ -21,11 +22,16 @@ async function boot() {
   });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') wake.acquire(); });
   async function navigate(name, session) {
+    if (name === 'close-session') name = selectedTab;
+    if (name !== 'session') selectedTab = name;
     cleanup(); stopRepeating();
     await wake.setActive(name === 'session');
     document.querySelector('#error').hidden = true;
-    for (const view of document.querySelectorAll('main > section')) view.hidden = view.id !== `view-${name}`;
-    shell.select(name);
+    document.querySelector('#session-error').hidden = true;
+    document.querySelector('#session-overlay').hidden = name !== 'session';
+    document.querySelector('#app-shell').inert = name === 'session';
+    for (const view of document.querySelectorAll('[id^="view-"]')) view.hidden = view.id !== `view-${name}`;
+    if (name !== 'session') shell.select(name);
     const root = document.querySelector(`#view-${name}`);
     if (name === 'session') cleanup = await renderSession(root, session || await repo.currentSession(), navigate);
     else if (name === 'home') cleanup = await renderHome(root, navigate);

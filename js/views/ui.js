@@ -12,7 +12,7 @@ export function showError(error) {
   const openDialog = [...document.querySelectorAll('dialog[open]')].at(-1);
   let node = openDialog?.querySelector('[role="alert"]');
   if (openDialog && !node) { node = element('p'); node.setAttribute('role', 'alert'); openDialog.prepend(node); }
-  node ||= document.querySelector('#error');
+  node ||= document.querySelector(document.querySelector('#session-overlay').hidden ? '#error' : '#session-error');
   node.textContent = error.message || String(error);
   node.hidden = false;
   node.scrollIntoView({ block: 'nearest' });

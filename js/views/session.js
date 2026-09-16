@@ -20,7 +20,8 @@ export async function renderSession(root, session, navigate) {
   let previous = new Map();
   let lastAdded;
   let disposed = false;
-  const header = element('header');
+  const header = document.querySelector('#session-header');
+  header.replaceChildren();
   const elapsed = element('span', '', 'muted');
   const cards = element('div');
   const footer = element('footer', '', 'rest');
@@ -28,7 +29,8 @@ export async function renderSession(root, session, navigate) {
   const note = button(session.condition_note || '体調をメモ', () => editText('体調をメモ', session.condition_note, async value => {
     session = await repo.saveSession(session, { condition_note: value }); note.textContent = value || '体調をメモ';
   }), 'note');
-  header.append(button('ホーム', () => navigate('home')), element('h1', formatDate(session.date)), elapsed, button('終了', async () => {
+  const close = button('', () => navigate('close-session'), 'icon-button'); close.append(icon('chevron')); close.setAttribute('aria-label', 'セッションを閉じる');
+  header.append(close, element('h1', formatDate(session.date)), elapsed, button('終了', async () => {
     if (await confirmAction('トレーニングを終了しますか？')) {
       const completed = await repo.finishSession(session);
       const data = completed.deleted_at === null ? await repo.sessionSummary(completed) : null;
@@ -36,7 +38,7 @@ export async function renderSession(root, session, navigate) {
       if (data) showSummary(completed, data, globalUnit);
     }
   }));
-  root.replaceChildren(header, note, cards, button('＋ 種目を追加', openPicker, 'wide'), footer);
+  root.replaceChildren(note, cards, button('＋ 種目を追加', openPicker, 'wide'), footer);
   let defaultRest = await repo.setting('default_rest_seconds', 90);
   function tick() {
     elapsed.textContent = isPastEntry(session) ? '過去の記録' : formatElapsed(elapsedSeconds(session.started_at, Date.now()));

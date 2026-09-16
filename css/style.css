@@ -151,3 +151,11 @@ html, body { height: 100%; overflow: hidden; }
 .tab-button span { font-size: 11px; }
 .tab-button[aria-current] { color: var(--brass); }
 .overview-heading h2 { font-size: 18px; margin: 0; }
+
+#session-overlay { position: fixed; inset: 0; z-index: 10; height: 100dvh; background: var(--bg); display: flex; flex-direction: column; }
+.session-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+#view-session { max-width: 600px; margin: auto; padding: var(--sp-4) var(--sp-4) calc(100px + env(safe-area-inset-bottom)); }
+#session-header { flex-wrap: nowrap; }
+#session-header > .muted { font-size: 13px; }
+#session-header h1 { white-space: nowrap; }
+#session-error { margin: var(--sp-4); border: 1px solid var(--danger); padding: var(--sp-4); }
