@@ -1,3 +1,4 @@
+import { createShell } from './views/shell.js';
 import { stopRepeating } from './views/pointer.js';
 import { createWakeLock } from './lib/wakelock.js';
 import * as repo from './repo.js';
@@ -9,6 +10,7 @@ async function boot() {
   let cleanup = () => {};
   let persistenceRequested = false;
   const wake = createWakeLock();
+  const shell = createShell(navigate);
   repo.setWriteListener(() => {
     if (persistenceRequested) return;
     persistenceRequested = true;
@@ -22,10 +24,12 @@ async function boot() {
     await wake.setActive(name === 'session');
     document.querySelector('#error').hidden = true;
     for (const view of document.querySelectorAll('main > section')) view.hidden = view.id !== `view-${name}`;
+    shell.select(name);
     const root = document.querySelector(`#view-${name}`);
     if (name === 'session') cleanup = await renderSession(root, session || await repo.currentSession(), navigate);
     else if (name === 'home') cleanup = await renderHome(root, navigate);
-    else cleanup = await renderSettings(root, navigate);
+    else if (name === 'settings') cleanup = await renderSettings(root, navigate);
+    else { root.replaceChildren(); cleanup = () => {}; }
   }
   try {
     await repo.initialize();

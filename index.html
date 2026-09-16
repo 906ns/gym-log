@@ -13,7 +13,9 @@
   <script type="module" src="./js/app.js"></script>
 </head>
 <body>
-  <main><p id="error" role="alert" hidden></p><section id="view-home"><h1>筋トレ記録</h1></section><section id="view-session" hidden></section><section id="view-settings" hidden></section></main>
+  <div id="app-shell"><header id="app-header" class="app-header"></header>
+  <main id="app-content"><p id="error" role="alert" hidden></p><section id="view-home"><h1>筋トレ記録</h1></section><section id="view-session" hidden></section><section id="view-settings" hidden></section><section id="view-history" hidden></section></main>
+  <nav id="tab-bar" aria-label="メインナビゲーション"></nav></div>
   <template id="tpl-set-row"><div class="set-row"></div></template>
   <template id="tpl-prev-set-row"><button class="previous" type="button"></button></template>
   <template id="tpl-exercise-card"><article class="card"></article></template>

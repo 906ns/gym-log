@@ -15,8 +15,7 @@ export async function renderHome(root, navigate) {
   const week = (await repo.sessionsBetween(weekStart(today), today)).filter(row => row.ended_at !== null);
   const overview = element('header', undefined, 'week-overview');
   const heading = element('div', undefined, 'overview-heading');
-  const settings = button('', () => navigate('settings'), 'icon-button'); settings.append(icon('settings')); settings.setAttribute('aria-label', '設定');
-  heading.append(element('h1', '今週のトレーニング'), settings);
+  heading.append(element('h2', '今週のトレーニング'));
   const number = element('div', undefined, 'week-number'); number.append(element('strong', String(week.length)), element('span', '回'));
   const last = history[0] ? `前回から ${daysBetween(history[0].date, today)}日` : '最初の記録を始めましょう';
   overview.append(heading, number, element('p', last, 'muted'));
