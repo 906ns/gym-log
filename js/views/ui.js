@@ -79,7 +79,14 @@ export function increments(control, current, save) {
 export function template(id) { return document.getElementById(id).content.firstElementChild.cloneNode(true); }
 export function dialog(id, title) {
   const node = document.getElementById(id);
-  node.replaceChildren(element('h2', title));
+  if (node.classList.contains('detail-page')) {
+    const header = element('header', undefined, 'app-header detail-header');
+    const back = button('', () => node.close(), 'icon-button'); back.append(icon('previous')); back.setAttribute('aria-label', '戻る');
+    header.append(back, element('h2', title)); node.replaceChildren(header);
+  } else {
+    node.replaceChildren(element('h2', title));
+    if (node.classList.contains('sheet')) { const grabber = element('span', '', 'sheet-grabber'); grabber.setAttribute('aria-hidden', 'true'); node.prepend(grabber); }
+  }
   return node;
 }
 export function confirmAction(message) {

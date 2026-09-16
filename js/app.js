@@ -1,3 +1,5 @@
+import { syncTheme } from './views/theme.js';
+import { animatePanel } from './views/motion.js';
 import { createMinibar } from './views/minibar.js';
 import { renderHistory } from './views/history.js';
 import { createShell } from './views/shell.js';
@@ -11,6 +13,7 @@ import { showError } from './views/ui.js';
 async function boot() {
   let cleanup = () => {};
   let selectedTab = 'home';
+  const scrollPositions = new Map();
   let persistenceRequested = false;
   const wake = createWakeLock();
   const shell = createShell(navigate);
@@ -24,8 +27,13 @@ async function boot() {
   });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') wake.acquire(); });
   async function navigate(name, session) {
+    const overlay = document.querySelector('#session-overlay');
+    const wasSession = !overlay.hidden;
     if (name === 'close-session') name = selectedTab;
+    const content = document.querySelector('#app-content');
+    if (!wasSession) scrollPositions.set(selectedTab, content.scrollTop);
     if (name !== 'session') selectedTab = name;
+    if (wasSession && name !== 'session') await animatePanel(overlay, false);
     cleanup(); stopRepeating();
     await wake.setActive(name === 'session');
     document.querySelector('#error').hidden = true;
@@ -39,10 +47,13 @@ async function boot() {
     else if (name === 'home') cleanup = await renderHome(root, navigate);
     else if (name === 'settings') cleanup = await renderSettings(root, navigate);
     else cleanup = await renderHistory(root, navigate);
+    if (name !== 'session') content.scrollTop = scrollPositions.get(name) || 0;
     await updateMinibar(name);
+    if (name === 'session' && !wasSession) animatePanel(overlay, true);
   }
   try {
     await repo.initialize();
+    await syncTheme();
     const session = await repo.currentSession();
     await navigate(session ? 'session' : 'home', session);
   } catch (error) {

@@ -1,3 +1,4 @@
+import { syncTheme, themeMode, setTheme } from './theme.js';
 import { listRow, groupedList, sectionHeading } from './list.js';
 import * as repo from '../repo.js';
 import { dateKey } from '../lib/datetime.js';
@@ -11,6 +12,15 @@ export async function renderSettings(root, navigate) {
     const control = button(value, async () => { await repo.saveSetting('weight_unit', value); await navigate('settings'); });
     control.setAttribute('aria-pressed', String(unit === value)); unitControls.append(control);
   }
+  const themeControls = element('div', undefined, 'theme-controls');
+  themeControls.setAttribute('aria-label', 'テーマ');
+  for (const [value, title] of [['dark', 'ダーク'], ['light', 'ライト'], ['system', 'システムに従う']]) {
+    const control = button(title, async () => {
+      await setTheme(value);
+      for (const node of themeControls.children) node.setAttribute('aria-pressed', String(node === control));
+    });
+    control.setAttribute('aria-pressed', String(themeMode() === value)); themeControls.append(control);
+  }
   const refresh = () => navigate('settings');
   const list = groupedList(exercises, row => row.body_part, row => parts[row.body_part], exercise => listRow({ title: exercise.name, subtitle: exercise.is_archived ? 'アーカイブ' : exercise.name_en, value: { selectorized: 'セレクタライズ', plate: 'プレート', bodyweight: '自重' }[exercise.load_type], symbol: exercise.body_part, action: () => editExercise(exercise) }));
   const fat = input('体脂肪率を入力する'); fat.type = 'checkbox'; fat.checked = showFat;
@@ -21,7 +31,7 @@ export async function renderSettings(root, navigate) {
     try {
       const text = await file.text(); repo.validateBackup(text);
       if (await confirmAction('現在の記録がすべて置き換わります。復元しますか？')) {
-        await repo.importBackup(text); await navigate('home');
+        await repo.importBackup(text); await syncTheme(); await navigate('home');
       }
     } catch (error) { showError(error); }
     finally { upload.value = ''; }
@@ -41,16 +51,17 @@ export async function renderSettings(root, navigate) {
     modal.append(field, button('保存する', async () => { await repo.saveSetting('default_rest_seconds', numberInput(field.value, 0, 600, true)); modal.close(); await refresh(); }, 'primary'), button('やめる', () => modal.close()));
     modal.showModal();
   } });
-  root.replaceChildren(list,
+  root.replaceChildren(sectionHeading('表示', 1), themeControls, list,
     listRow({ title: '種目を追加', symbol: 'add', action: () => editExercise() }), sectionHeading('トレーニング', 3),
     listRow({ title: '重量の表示単位', symbol: 'weight', control: unitControls }), restRow,
     listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), sectionHeading('データ', 4),
     exportRow, importRow, upload, listRow({ title: 'データの保持', value: persisted ? '許可' : '未許可' }),
     listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), sectionHeading('このアプリ', 2),
-    listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-v12-7' }));
+    listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-v12-8a' }));
   if (!persisted) root.append(element('p', 'ホーム画面に追加して使い、定期的にバックアップを書き出してください。', 'muted'));
   function editExercise(existing) {
-    const modal = dialog('dlg-editor', existing ? '種目を編集' : '種目を追加');
+    const modal = dialog('dlg-exercise', existing ? '種目を編集' : '種目を追加');
+    const form = element('div', undefined, 'detail-content'); modal.append(form);
     if (existing) {
       const index = exercises.findIndex(row => row.id === existing.id);
       const controls = element('div', undefined, 'reorder-controls');
@@ -62,7 +73,7 @@ export async function renderSettings(root, navigate) {
         move.disabled = index + delta < 0 || index + delta >= exercises.length;
         controls.append(move);
       }
-      modal.append(controls);
+      form.append(controls);
     }
     const fields = {
       name: input('名前', existing?.name || ''), name_en: input('英語表記', existing?.name_en || ''),
@@ -76,8 +87,8 @@ export async function renderSettings(root, navigate) {
     fields.setup_note.value = existing?.setup_note || ''; fields.setup_note.setAttribute('aria-label', 'セッティングメモ');
     fields.is_archived.type = 'checkbox'; fields.is_archived.checked = existing?.is_archived || false;
     const labels = { name: '名前', name_en: '英語表記', body_part: '部位', increment_kg: '重量刻み（kg）', increment_lb: '重量刻み（lb）', display_unit: '種目の表示単位', default_rest_seconds: '目標休憩秒数', setup_note: 'セッティングメモ', is_archived: 'アーカイブ' };
-    for (const [key, field] of Object.entries(fields)) modal.append(label(labels[key], field));
-    modal.append(button('保存する', async () => {
+    for (const [key, field] of Object.entries(fields)) form.append(label(labels[key], field));
+    form.append(button('保存する', async () => {
       const values = Object.fromEntries(Object.entries(fields).map(([key, field]) => [key, key === 'is_archived' ? field.checked : field.value]));
       await repo.saveExercise({ ...existing, ...values }, existing); modal.close(); await refresh();
     }, 'primary'), button('やめる', () => modal.close()));

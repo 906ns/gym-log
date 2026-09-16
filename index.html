@@ -3,12 +3,36 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#16191B">
+  <meta id="theme-color" name="theme-color" content="#16191B">
+  <meta id="theme-dark" name="theme-color" content="#16191B" media="(prefers-color-scheme: dark)">
+  <meta id="theme-light" name="theme-color" content="#F1F3F4" media="(prefers-color-scheme: light)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>筋トレ記録</title>
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <script>
+    (() => {
+      // 初回描画の前に読み、以後の書き込みもテーマ専用のこの窓口だけで行う。
+      const cache = value => {
+        try {
+          const storage = window.localStorage;
+          if (value === undefined) return storage.getItem('gym-log-theme');
+          storage.setItem('gym-log-theme', value);
+        } catch (error) {
+          // キャッシュ不可でもIndexedDBを正として使えるため起動は続ける。
+          console.error(error);
+        }
+      };
+      const theme = cache();
+      if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+      const dark = theme === 'dark' || theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches;
+      document.getElementById('theme-color').content = document.getElementById(dark ? 'theme-dark' : 'theme-light').content;
+      document.addEventListener('theme-cache', event => {
+        if (['system', 'dark', 'light'].includes(event.detail)) cache(event.detail);
+      });
+    })();
+  </script>
   <link rel="stylesheet" href="./css/style.css">
   <script type="module" src="./js/app.js"></script>
 </head>
@@ -40,6 +64,6 @@
   <template id="tpl-prev-set-row"><button class="previous" type="button"></button></template>
   <template id="tpl-exercise-card"><article class="card"></article></template>
   <template id="tpl-history-row"><button class="history" type="button"></button></template>
-  <dialog id="dlg-body-weight"></dialog><dialog id="dlg-exercise-picker" class="sheet"></dialog><dialog id="dlg-confirm"></dialog><dialog id="dlg-editor"></dialog><dialog id="dlg-summary" class="sheet summary"></dialog><dialog id="dlg-set" class="sheet"></dialog><dialog id="dlg-rest" class="sheet"></dialog><dialog id="dlg-history" class="sheet"></dialog>
+  <dialog id="dlg-body-weight" class="sheet"></dialog><dialog id="dlg-exercise-picker" class="sheet"></dialog><dialog id="dlg-confirm"></dialog><dialog id="dlg-editor" class="sheet"></dialog><dialog id="dlg-exercise" class="detail-page"></dialog><dialog id="dlg-summary" class="sheet summary"></dialog><dialog id="dlg-set" class="sheet"></dialog><dialog id="dlg-rest" class="sheet"></dialog><dialog id="dlg-history" class="sheet"></dialog>
 </body>
 </html>
