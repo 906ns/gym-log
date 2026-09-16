@@ -1,3 +1,4 @@
+import { createMinibar } from './views/minibar.js';
 import { renderHistory } from './views/history.js';
 import { createShell } from './views/shell.js';
 import { stopRepeating } from './views/pointer.js';
@@ -13,6 +14,7 @@ async function boot() {
   let persistenceRequested = false;
   const wake = createWakeLock();
   const shell = createShell(navigate);
+  const updateMinibar = createMinibar(navigate);
   repo.setWriteListener(() => {
     if (persistenceRequested) return;
     persistenceRequested = true;
@@ -37,6 +39,7 @@ async function boot() {
     else if (name === 'home') cleanup = await renderHome(root, navigate);
     else if (name === 'settings') cleanup = await renderSettings(root, navigate);
     else cleanup = await renderHistory(root, navigate);
+    await updateMinibar(name);
   }
   try {
     await repo.initialize();
