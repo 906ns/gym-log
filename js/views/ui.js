@@ -1,3 +1,4 @@
+import { bindSheetDrag } from './sheet-drag.js';
 import { icon } from './graphics.js';
 import { stepValue } from '../lib/input.js';
 import { bindRepeat } from './pointer.js';
@@ -85,7 +86,7 @@ export function dialog(id, title) {
     header.append(back, element('h2', title)); node.replaceChildren(header);
   } else {
     node.replaceChildren(element('h2', title));
-    if (node.classList.contains('sheet')) { const grabber = element('span', '', 'sheet-grabber'); grabber.setAttribute('aria-hidden', 'true'); node.prepend(grabber); }
+    if (node.classList.contains('sheet')) { const grabber = button('', () => node.close(), 'sheet-grabber'); grabber.setAttribute('aria-label', 'シートを閉じる'); node.prepend(grabber); bindSheetDrag(node, grabber); }
   }
   return node;
 }
