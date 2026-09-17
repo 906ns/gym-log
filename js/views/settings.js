@@ -1,3 +1,4 @@
+import { saveGlassAppearance, syncGlassAppearance } from './glass.js';
 import { syncTheme, themeMode, setTheme } from './theme.js';
 import { listRow, groupedList, sectionHeading } from './list.js';
 import * as repo from '../repo.js';
@@ -21,6 +22,10 @@ export async function renderSettings(root, navigate) {
     });
     control.setAttribute('aria-pressed', String(themeMode() === value)); themeControls.append(control);
   }
+  const transparency = input('透明度オフ'); transparency.type = 'checkbox';
+  transparency.checked = document.documentElement.dataset.glass === 'off';
+  transparency.addEventListener('change', () => saveGlassAppearance(!transparency.checked).catch(showError));
+  const glassRow = listRow({ title: '透明度オフ', subtitle: 'ナビゲーションを不透明にする', control: transparency });
   const refresh = () => navigate('settings');
   const list = groupedList(exercises, row => row.body_part, row => parts[row.body_part], exercise => listRow({ title: exercise.name, subtitle: exercise.is_archived ? 'アーカイブ' : exercise.name_en, value: { selectorized: 'セレクタライズ', plate: 'プレート', bodyweight: '自重' }[exercise.load_type], symbol: exercise.body_part, action: () => editExercise(exercise) }));
   const fat = input('体脂肪率を入力する'); fat.type = 'checkbox'; fat.checked = showFat;
@@ -31,7 +36,7 @@ export async function renderSettings(root, navigate) {
     try {
       const text = await file.text(); repo.validateBackup(text);
       if (await confirmAction('現在の記録がすべて置き換わります。復元しますか？')) {
-        await repo.importBackup(text); await syncTheme(); await navigate('home');
+        await repo.importBackup(text); await syncTheme(); await syncGlassAppearance(); await navigate('home');
       }
     } catch (error) { showError(error); }
     finally { upload.value = ''; }
@@ -51,13 +56,13 @@ export async function renderSettings(root, navigate) {
     modal.append(field, button('保存する', async () => { await repo.saveSetting('default_rest_seconds', numberInput(field.value, 0, 600, true)); modal.close(); await refresh(); }, 'primary'), button('やめる', () => modal.close()));
     modal.showModal();
   } });
-  root.replaceChildren(sectionHeading('表示', 1), themeControls, list,
+  root.replaceChildren(sectionHeading('表示', 2), themeControls, glassRow, list,
     listRow({ title: '種目を追加', symbol: 'add', action: () => editExercise() }), sectionHeading('トレーニング', 3),
     listRow({ title: '重量の表示単位', symbol: 'weight', control: unitControls }), restRow,
     listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), sectionHeading('データ', 4),
     exportRow, importRow, upload, listRow({ title: 'データの保持', value: persisted ? '許可' : '未許可' }),
     listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), sectionHeading('このアプリ', 2),
-    listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-v12-9a' }));
+    listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-glass-1' }));
   let section;
   for (const node of [...root.children]) {
     if (node.classList.contains('section-heading')) {

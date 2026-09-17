@@ -34,6 +34,7 @@
     })();
   </script>
   <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/glass.css">
   <script type="module" src="./js/app.js"></script>
 </head>
 <body>
@@ -55,10 +56,10 @@
     <symbol id="icon-legs" viewBox="0 0 24 24"><path d="M6 3H18L17 12L20 21H14L12 13L10 21H4L7 12ZM12 3V13"/></symbol>
   </defs></svg>
 
-  <div id="app-shell"><header id="app-header" class="app-header"></header>
+  <div id="app-shell"><header id="app-header" class="app-header lg" data-lg></header>
   <main id="app-content"><p id="error" role="alert" hidden></p><section id="view-home"><h1>筋トレ記録</h1></section><section id="view-settings" hidden></section><section id="view-history" hidden></section></main>
-  <aside id="mini-bar" hidden></aside>
-  <nav id="tab-bar" aria-label="メインナビゲーション"></nav></div>
+  <div id="navigation-dock" class="lg" data-lg><aside id="mini-bar" hidden></aside>
+  <nav id="tab-bar" aria-label="メインナビゲーション"></nav></div></div>
   <section id="session-overlay" aria-label="トレーニング記録" hidden><header id="session-header" class="app-header"></header><div class="session-scroll"><p id="session-error" role="alert" hidden></p><section id="view-session" hidden></section></div></section>
   <template id="tpl-set-row"><div class="set-row"></div></template>
   <template id="tpl-prev-set-row"><button class="previous" type="button"></button></template>

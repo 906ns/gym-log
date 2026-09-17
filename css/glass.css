@@ -1,0 +1,157 @@
+/* =====================================================================
+   liquid-glass-ui / glass.css
+   全ブラウザ共通のベース（すりガラス）。
+   屈折は liquid-glass.js が Chromium でのみ上乗せする。
+   ===================================================================== */
+
+:root {
+  /* 見た目の調整はこの変数だけで行う */
+  --lg-radius: 22px;
+  --lg-blur: 14px;              /* フォールバック時のぼかし */
+  --lg-blur-refract: 3px;       /* 屈折時のぼかし（強いと屈折が見えなくなる） */
+  --lg-saturate: 1.7;
+  --lg-bg: rgb(255 255 255 / 0.16);
+  --lg-edge: rgb(255 255 255 / 0.22);       /* 外周の細い縁 */
+  --lg-highlight: rgb(255 255 255 / 0.55);  /* 左上の光 */
+  --lg-shadow: 0 10px 30px rgb(0 0 0 / 0.18), 0 1px 3px rgb(0 0 0 / 0.12);
+  --lg-fg: #10131a;
+  --lg-solid: #f3f4f7;          /* 透明度オフ時の面 */
+  --lg-tint: #0a84ff;           /* 主要アクション1つだけに使う色 */
+  --lg-focus: #0a84ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --lg-bg: rgb(30 32 38 / 0.28);
+    --lg-edge: rgb(255 255 255 / 0.14);
+    --lg-highlight: rgb(255 255 255 / 0.28);
+    --lg-shadow: 0 10px 30px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.4);
+    --lg-fg: #f4f5f8;
+    --lg-solid: #23252b;
+    --lg-focus: #4da3ff;
+  }
+}
+:root[data-theme="dark"] {
+  --lg-bg: rgb(30 32 38 / 0.28);
+  --lg-edge: rgb(255 255 255 / 0.14);
+  --lg-highlight: rgb(255 255 255 / 0.28);
+  --lg-shadow: 0 10px 30px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.4);
+  --lg-fg: #f4f5f8;
+  --lg-solid: #23252b;
+  --lg-focus: #4da3ff;
+}
+
+/* ---------- Regular（基本。迷ったらこれ） ---------- */
+.lg {
+  position: relative;
+  isolation: isolate;
+  color: var(--lg-fg);
+  background: var(--lg-bg);
+  border-radius: var(--lg-radius);
+  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
+  backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
+  box-shadow:
+    inset 0 0 0 1px var(--lg-edge),
+    inset 1.5px 1.5px 0 -0.5px var(--lg-highlight),
+    inset -1px -1px 0 -0.5px rgb(255 255 255 / 0.12),
+    var(--lg-shadow);
+}
+
+/* 屈折が有効なとき（JS がクラスと --lg-refract-filter を付ける） */
+.lg.lg--refract {
+  backdrop-filter: var(--lg-refract-filter);
+}
+
+/* ---------- Clear（写真・動画の上専用。減光込み） ---------- */
+.lg.lg--clear {
+  --lg-bg: rgb(255 255 255 / 0.06);
+  color: #fff;
+  -webkit-backdrop-filter: blur(4px) brightness(0.72) saturate(1.4);
+  backdrop-filter: blur(4px) brightness(0.72) saturate(1.4);
+}
+.lg.lg--clear.lg--refract {
+  backdrop-filter: var(--lg-refract-filter) brightness(0.72);
+}
+
+/* ---------- 主要アクション用の色付け（画面に1つまで） ---------- */
+.lg.lg--tint {
+  --lg-bg: color-mix(in oklab, var(--lg-tint) 62%, transparent);
+  color: #fff;
+}
+
+/* ---------- 形 ---------- */
+.lg--pill { border-radius: 999px; }
+.lg--circle { border-radius: 50%; aspect-ratio: 1; }
+
+/* ---------- 操作できる要素 ---------- */
+.lg-interactive {
+  cursor: pointer;
+  font: inherit;
+  border: 0;
+  transition: transform 180ms cubic-bezier(.3, 1.4, .5, 1), filter 180ms ease;
+}
+.lg-interactive:hover { filter: brightness(1.06); }
+.lg-interactive:active { transform: scale(0.96); filter: brightness(1.14); }
+.lg-interactive:focus-visible {
+  outline: 2px solid var(--lg-focus);
+  outline-offset: 3px;
+}
+
+/* ガラスの上に載せる要素はガラスにせず、薄い塗りにする */
+.lg-inner-fill {
+  background: rgb(255 255 255 / 0.18);
+  border-radius: calc(var(--lg-radius) - 6px);
+}
+
+/* =====================================================================
+   アクセシビリティ（後ろに置くこと。詳細度で上のルールに勝たせている）
+   ===================================================================== */
+
+/* OS の「透明度を下げる」（Chrome/Edge のみ対応） */
+@media (prefers-reduced-transparency: reduce) {
+  .lg, .lg.lg--refract, .lg.lg--clear, .lg.lg--clear.lg--refract {
+    background: var(--lg-solid);
+    color: var(--lg-fg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* アプリ内の切替（Safari/Firefox 向けに必須）: <html data-glass="off"> */
+:root[data-glass="off"] .lg,
+:root[data-glass="off"] .lg.lg--refract,
+:root[data-glass="off"] .lg.lg--clear,
+:root[data-glass="off"] .lg.lg--clear.lg--refract {
+  background: var(--lg-solid);
+  color: var(--lg-fg);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* 色付けボタンは透明度オフでも色を残す */
+@media (prefers-reduced-transparency: reduce) {
+  .lg.lg--tint { background: var(--lg-tint); color: #fff; }
+}
+:root[data-glass="off"] .lg.lg--tint { background: var(--lg-tint); color: #fff; }
+
+/* OS の「コントラストを上げる」 */
+@media (prefers-contrast: more) {
+  .lg, .lg.lg--refract, .lg.lg--clear, .lg.lg--clear.lg--refract {
+    background: var(--lg-solid);
+    color: var(--lg-fg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: inset 0 0 0 1.5px currentColor;
+  }
+  .lg.lg--tint { background: var(--lg-tint); color: #fff; }
+}
+
+/* Windows のハイコントラストなど */
+@media (forced-colors: active) {
+  .lg { border: 1px solid CanvasText; }
+}
+
+/* OS の「視差効果を減らす」 */
+@media (prefers-reduced-motion: reduce) {
+  .lg-interactive { transition: none; }
+  .lg-interactive:active { transform: none; }
+}

@@ -1,3 +1,4 @@
+import { initializeGlass } from './views/glass.js';
 import { syncTheme } from './views/theme.js';
 import { animatePanel } from './views/motion.js';
 import { createMinibar } from './views/minibar.js';
@@ -54,6 +55,7 @@ async function boot() {
   try {
     await repo.initialize();
     await syncTheme();
+    await initializeGlass();
     const session = await repo.currentSession();
     await navigate(session ? 'session' : 'home', session);
   } catch (error) {
