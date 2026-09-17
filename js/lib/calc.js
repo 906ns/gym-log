@@ -1,7 +1,8 @@
 export const round = (value, digits = 2) => Math.round((value + Number.EPSILON) * 10 ** digits) / 10 ** digits;
 export function numberInput(value, min, max, integer = false) {
-  if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(String(value).trim())) throw new Error('数値を入力してください');
-  const number = Number(value);
+  const normalized = String(value).normalize('NFKC').trim();
+  if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) throw new Error('数値を入力してください');
+  const number = Number(normalized);
   if (!Number.isFinite(number) || number < min || number > max || (integer && !Number.isInteger(number))) throw new Error(`${min}〜${max}${integer ? 'の整数' : ''}を入力してください`);
   return number;
 }
