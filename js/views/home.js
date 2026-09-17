@@ -45,7 +45,7 @@ export async function renderHome(root, navigate) {
   }, 'wide quiet');
   past.disabled = Boolean(current);
   if (current) past.title = '現在のセッションを終了してから記録できます';
-  root.replaceChildren(overview, body, calendar, start, past);
+  root.replaceChildren(overview, start, past, body, calendar);
   await renderMonth(dateKey(new Date()));
   let timer;
   if (current) {
