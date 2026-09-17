@@ -26,6 +26,10 @@ export function button(text, action, className) {
   node.addEventListener('click', async () => {
     if (node.disabled) return;
     node.disabled = true;
+    // 再試行前に同じ画面の古いエラーを解除し、失敗時はcatchで新しい原因を示す。
+    const modal = node.closest('dialog');
+    const errorNode = modal ? modal.querySelector('[role="alert"]') : document.querySelector(document.querySelector('#session-overlay').hidden ? '#error' : '#session-error');
+    if (errorNode) { errorNode.hidden = true; errorNode.textContent = ''; }
     try { await action(); } catch (error) { showError(error); }
     finally { node.disabled = false; }
   });
