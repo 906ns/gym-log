@@ -85,7 +85,14 @@ export function dialog(id, title) {
     const back = button('', () => node.close(), 'icon-button'); back.append(icon('previous')); back.setAttribute('aria-label', '戻る');
     header.append(back, element('h2', title)); node.replaceChildren(header);
   } else {
-    node.replaceChildren(element('h2', title));
+    const heading = element('h2', title);
+    node.replaceChildren(heading);
+    // 開いた直後は見出しに焦点を置き、取っ手の枠や入力キーボードを出さない。
+    if (node.classList.contains('sheet')) {
+      heading.tabIndex = -1;
+      heading.setAttribute('autofocus', '');
+      heading.classList.add('sheet-initial-focus');
+    }
     if (node.classList.contains('sheet')) { const grabber = button('', () => node.close(), 'sheet-grabber'); grabber.setAttribute('aria-label', 'シートを閉じる'); node.prepend(grabber); bindSheetDrag(node, grabber); }
   }
   return node;

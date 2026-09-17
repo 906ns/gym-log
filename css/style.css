@@ -294,3 +294,7 @@ dialog.sheet > .sheet-grabber { display: grid; place-items: center; width: 100%;
 .sheet-grabber::before { content: ''; width: 36px; height: 4px; border-radius: var(--r-pill); background: var(--line); }
 dialog.sheet.sheet-dragging { transition: none; }
 .sheet-dragging .sheet-grabber { cursor: grabbing; }
+
+/* 自動フォーカス用の見出しだけ枠を出さず、操作ボタンのフォーカス枠は維持する。 */
+.sheet-initial-focus:focus { outline: none; }
+.sheet-grabber:focus:not(:focus-visible) { outline: none; }

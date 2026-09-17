@@ -206,7 +206,7 @@ export async function renderSession(root, session, navigate) {
     for (const [key, text] of Object.entries({ '': 'すべて', ...parts })) {
       const control = button(text, () => filter(key)); control.dataset.part = key; filters.append(control);
     }
-    modal.append(button('閉じる', () => modal.close()), searchBox, filters, list, button('＋ 種目を新規作成', () => {
+    modal.append(searchBox, filters, list, button('＋ 種目を新規作成', () => {
       const form = dialog('dlg-editor', '種目を新規作成');
       const name = input('種目名'); const part = select('部位', parts, 'chest');
       form.append(name, part, button('作成する', async () => {
