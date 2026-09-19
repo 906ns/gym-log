@@ -319,3 +319,9 @@ dialog.sheet.sheet-dragging { transition: none; }
 .session-actions { display: flex; gap: 8px; margin-top: 8px; }
 .session-actions > button:first-child { min-width: 88px; }
 .session-actions > .primary { flex: 1; width: auto; }
+
+#view-session .card-heading { color: var(--text); font-size: 18px; font-weight: 600; }
+.card-heading .icon { transform: rotate(90deg); }
+.card-heading[aria-expanded="true"] .icon { transform: rotate(-90deg); }
+.exercise-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.exercise-history { min-width: 44px; min-height: 44px; background: none; border: 0; color: var(--muted); font-size: 15px; }
