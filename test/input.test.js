@@ -22,5 +22,5 @@ test('記録入力の未入力と範囲外を区別し両方の不備を返す',
   assert.match(setInputErrors('501', '101').reps, /整数/);
   assert.deepEqual(setInputErrors('６２．５', '１０'), {});
   assert.deepEqual(setInputErrors('1000', '10', 'lb'), {});
-  assert.ok(setInputErrors('-5', 'abc').weight);
+  assert.match(setInputErrors('-5', 'abc').weight, /範囲/);
 });
