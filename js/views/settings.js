@@ -51,7 +51,7 @@ export async function renderSettings(root, navigate) {
   } });
   const importRow = listRow({ title: 'バックアップから復元する', symbol: 'history', action: () => upload.click() });
   importRow.classList.add('danger'); upload.hidden = true;
-  const restRow = listRow({ title: '目標休憩秒数', value: `${rest}秒`, symbol: 'history', action: () => {
+  const restRow = listRow({ title: '目標休憩秒数', subtitle: '新規種目の初期値。既存種目は種目一覧から変更', value: `${rest}秒`, symbol: 'history', action: () => {
     const modal = dialog('dlg-editor', '目標休憩秒数'); const field = input('秒数', rest, 'numeric');
     modal.append(field, button('保存する', async () => { await repo.saveSetting('default_rest_seconds', numberInput(field.value, 0, 600, true)); modal.close(); await refresh(); }, 'primary'), button('やめる', () => modal.close()));
     modal.showModal();

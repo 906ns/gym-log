@@ -158,7 +158,7 @@ export async function renderSession(root, session, navigate) {
     const actions = element('div', undefined, 'session-actions');
     const stepButton = button(`刻み ${exercise[incrementKey]}`, () => {
       const modal = dialog('dlg-editor', '重量の増減幅');
-      modal.append(increments(weight, exercise[incrementKey], async step => {
+      modal.append(element('p', 'この種目の刻みを保存します。次回の記録にも使います。', 'muted'), increments(weight, exercise[incrementKey], async step => {
         const updated = await repo.saveExercise({ ...exercise, [incrementKey]: step }, exercise);
         Object.assign(exercise, updated);
         stepButton.textContent = `刻み ${step}`;
