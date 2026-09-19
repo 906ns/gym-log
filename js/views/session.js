@@ -45,7 +45,6 @@ export async function renderSession(root, session, navigate) {
     elapsed.textContent = isPastEntry(session) ? '過去の記録' : formatElapsed(elapsedSeconds(session.started_at, Date.now()));
     const last = sets.at(-1);
     footer.hidden = !last || isPastEntry(session);
-    requestAnimationFrame(() => root.style.setProperty('--rest-offset', `${footer.getBoundingClientRect().height}px`));
     if (!last) return;
     const seconds = elapsedSeconds(last.recorded_at, Date.now());
     const target = exercises.find(row => row.id === (selected || last.exercise_id))?.default_rest_seconds ?? defaultRest;
@@ -150,7 +149,8 @@ export async function renderSession(root, session, navigate) {
     }, 'primary');
     for (const field of [weight.field, reps.field]) field.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); record.click(); } });
     controls.append(record);
-    card.append(controls);
+    // セット追加で入力位置が下へ逃げず、一覧を覆わない通常配置にする。
+    card.insertBefore(controls, prLine);
     if (exercise.setup_note) card.append(button(exercise.setup_note, () => editText('セッティング', exercise.setup_note, async value => {
       await repo.saveExercise({ ...exercise, setup_note: value }, exercise); await reload();
     }), 'note'));
