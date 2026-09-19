@@ -1,3 +1,4 @@
+import { setInputErrors } from '../lib/input.js';
 import { listRow, sectionHeading, emptyState } from './list.js';
 import { showSummary } from './summary.js';
 import { icon } from './graphics.js';
@@ -167,12 +168,22 @@ export async function renderSession(root, session, navigate) {
     });
     controls.append(fields, actions);
     if (exercise.load_type === 'plate') controls.append(element('p', '合計（両側）', 'muted'));
+    const validation = element('p', '', 'input-error');
+    validation.id = 'set-input-error'; validation.setAttribute('role', 'alert'); validation.hidden = true;
+    for (const field of [weight.field, reps.field]) field.setAttribute('aria-describedby', validation.id);
     const record = button('記録する', async () => {
+      const errors = setInputErrors(weight.field.value, reps.field.value, unit);
+      weight.field.setAttribute('aria-invalid', String(Boolean(errors.weight)));
+      reps.field.setAttribute('aria-invalid', String(Boolean(errors.reps)));
+      validation.textContent = Object.values(errors).join('。');
+      validation.hidden = !Object.keys(errors).length;
+      if (!validation.hidden) return;
       const row = await repo.saveSet(session.id, exercise.id, weight.kg(), reps.field.value);
       lastAdded = row.id; await reload();
     }, 'primary');
     for (const field of [weight.field, reps.field]) field.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); record.click(); } });
     actions.append(stepButton, record);
+    controls.append(validation);
     // 入力と休憩はスクロール領域の外で高さを確保し、記録一覧に重ねない。
     inputDock.append(controls);
     card.append(prLine);

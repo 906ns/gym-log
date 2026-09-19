@@ -340,3 +340,6 @@ input[type="checkbox"] { appearance: none; -webkit-appearance: none; position: r
 input[type="checkbox"]::before { content: ''; position: absolute; inset: 10px; border: 2px solid var(--muted); border-radius: 4px; background: var(--surface-2); }
 input[type="checkbox"]:checked::before { background: var(--brass); border-color: var(--brass); }
 input[type="checkbox"]:checked::after { content: ''; position: absolute; left: 18px; top: 14px; width: 6px; height: 12px; border: solid var(--on-brass); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+.input-error { margin: 4px 0 0; color: var(--danger); font-size: 15px; }
+[aria-invalid="true"] { outline: 2px solid var(--danger); outline-offset: -2px; }
