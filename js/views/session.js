@@ -21,6 +21,8 @@ export async function renderSession(root, session, navigate) {
   let previous = new Map();
   let lastAdded;
   let disposed = false;
+  const overlay = document.querySelector('#session-overlay');
+  const inputDock = element('div', undefined, 'session-input');
   const header = document.querySelector('#session-header');
   header.replaceChildren();
   const elapsed = element('span', '', 'muted');
@@ -39,7 +41,8 @@ export async function renderSession(root, session, navigate) {
       if (data) showSummary(completed, data, globalUnit);
     }
   }));
-  root.replaceChildren(note, cards, button('＋ 種目を追加', openPicker, 'wide'), footer);
+  root.replaceChildren(cards, note, button('＋ 種目を追加', openPicker, 'wide'));
+  overlay.append(inputDock, footer);
   let defaultRest = await repo.setting('default_rest_seconds', 90);
   function tick() {
     elapsed.textContent = isPastEntry(session) ? '過去の記録' : formatElapsed(elapsedSeconds(session.started_at, Date.now()));
@@ -60,8 +63,12 @@ export async function renderSession(root, session, navigate) {
     paint(); tick();
   }
   function paint() {
+    const scroll = root.closest('.session-scroll');
+    const scrollTop = scroll.scrollTop;
     stopRepeating();
     cards.replaceChildren();
+    inputDock.replaceChildren();
+    inputDock.hidden = !selected;
     const ids = [...new Set([...sets.map(row => row.exercise_id), ...added])];
     if (!ids.length) cards.append(element('p', '最初の種目を選びましょう', 'empty-message'), button('種目を選ぶ', openPicker, 'primary'));
     for (const id of ids) {
@@ -76,6 +83,7 @@ export async function renderSession(root, session, navigate) {
         const height = card.getBoundingClientRect().height;
         selected = selected === id ? null : id; lastAdded = null; paint(); tick();
         const next = [...cards.children].find(node => node.dataset.exercise === id);
+        if (selected && next) next.scrollIntoView({ block: 'start' });
         if (next && !matchMedia('(prefers-reduced-motion: reduce)').matches) next.animate([{ height: `${height}px` }, { height: `${next.getBoundingClientRect().height}px` }], { duration: 140, easing: 'ease-out' });
       }, 'card-heading');
       toggle.setAttribute('aria-expanded', String(selected === id));
@@ -85,10 +93,12 @@ export async function renderSession(root, session, navigate) {
       const heading = element('h2'); heading.append(name);
       toggle.setAttribute('aria-label', `${exercise.name}の入力を${selected === id ? '閉じる' : '開く'}`);
       card.append(heading, toggle);
-      if (today.length) card.append(element('p', `推定1RM ${formatTotal(bestMax(today), resolveUnit(exercise, globalUnit))}${prev ? ` / 前回比 ${formatTotal(previousDifference(today, prev.sets), resolveUnit(exercise, globalUnit))}` : ''}`, 'muted'));
       if (selected === id) expanded(card, exercise, today, prev);
+      if (today.length) card.append(element('p', `推定1RM ${formatTotal(bestMax(today), resolveUnit(exercise, globalUnit))}${prev ? ` / 前回比 ${formatTotal(previousDifference(today, prev.sets), resolveUnit(exercise, globalUnit))}` : ''}`, 'muted'));
       cards.append(card);
     }
+    // DOM再構築時のスクロール補正で、見ていた前回行が動かないようにする。
+    scroll.scrollTop = scrollTop;
   }
   function expanded(card, exercise, today, prev) {
     const initial = today.at(-1) || prev?.sets[0];
@@ -99,7 +109,7 @@ export async function renderSession(root, session, navigate) {
     weight.field.setAttribute('aria-label', '重量'); reps.field.setAttribute('aria-label', 'レップ');
     weight.field.classList.add('weight-input');
     const prLine = element('p', '', 'muted pr-line');
-    card.append(prLine);
+
     const badges = new Map();
     card.append(element('p', prev ? `前回 ${formatDate(prev.date)}` : 'この種目は初回です', 'muted'));
     for (const set of prev?.sets || []) {
@@ -109,7 +119,7 @@ export async function renderSession(root, session, navigate) {
       row.addEventListener('click', () => { weight.setKg(set.weight); reps.field.value = set.reps; });
       card.append(row);
     }
-    card.append(element('h2', isPastEntry(session) ? 'この日の記録' : '今日'));
+    if (today.length) card.append(element('h2', isPastEntry(session) ? 'この日の記録' : '今日'));
     for (const set of today) {
       const row = template('tpl-set-row');
       if (set.id === lastAdded) row.classList.add('just-added');
@@ -138,19 +148,30 @@ export async function renderSession(root, session, navigate) {
       }
     }).catch(showError);
     const controls = element('div', undefined, 'controls');
-    controls.append(weight.group, increments(weight, exercise[incrementKey], async step => {
-      const updated = await repo.saveExercise({ ...exercise, [incrementKey]: step }, exercise);
-      Object.assign(exercise, updated);
-    }), reps.group);
+    const fields = element('div', undefined, 'session-fields');
+    fields.append(weight.group, reps.group);
+    const actions = element('div', undefined, 'session-actions');
+    const stepButton = button(`刻み ${exercise[incrementKey]}`, () => {
+      const modal = dialog('dlg-editor', '重量の増減幅');
+      modal.append(increments(weight, exercise[incrementKey], async step => {
+        const updated = await repo.saveExercise({ ...exercise, [incrementKey]: step }, exercise);
+        Object.assign(exercise, updated);
+        stepButton.textContent = `刻み ${step}`;
+        modal.close();
+      }), button('閉じる', () => modal.close()));
+      modal.showModal();
+    });
+    controls.append(fields, actions);
     if (exercise.load_type === 'plate') controls.append(element('p', '合計（両側）', 'muted'));
     const record = button('記録する', async () => {
       const row = await repo.saveSet(session.id, exercise.id, weight.kg(), reps.field.value);
       lastAdded = row.id; await reload();
     }, 'primary');
     for (const field of [weight.field, reps.field]) field.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); record.click(); } });
-    controls.append(record);
-    // セット追加で入力位置が下へ逃げず、一覧を覆わない通常配置にする。
-    card.insertBefore(controls, prLine);
+    actions.append(stepButton, record);
+    // 入力と休憩はスクロール領域の外で高さを確保し、記録一覧に重ねない。
+    inputDock.append(controls);
+    card.append(prLine);
     if (exercise.setup_note) card.append(button(exercise.setup_note, () => editText('セッティング', exercise.setup_note, async value => {
       await repo.saveExercise({ ...exercise, setup_note: value }, exercise); await reload();
     }), 'note'));
@@ -200,6 +221,7 @@ export async function renderSession(root, session, navigate) {
       for (const exercise of matches) {
         list.append(listRow({ title: exercise.name, symbol: exercise.body_part, value: sets.some(row => row.exercise_id === exercise.id) ? '記録済' : '', action: async () => {
           added.push(exercise.id); selected = exercise.id; modal.close(); await reload();
+          [...cards.children].find(node => node.dataset.exercise === selected)?.scrollIntoView({ block: 'start' });
         } }));
       }
     }
@@ -219,5 +241,5 @@ export async function renderSession(root, session, navigate) {
   }
   await reload();
   const timer = setInterval(tick, 1000);
-  return () => { disposed = true; clearInterval(timer); stopRepeating(); };
+  return () => { disposed = true; clearInterval(timer); stopRepeating(); inputDock.remove(); footer.remove(); };
 }

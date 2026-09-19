@@ -298,3 +298,24 @@ dialog.sheet.sheet-dragging { transition: none; }
 /* 自動フォーカス用の見出しだけ枠を出さず、操作ボタンのフォーカス枠は維持する。 */
 .sheet-initial-focus:focus { outline: none; }
 .sheet-grabber:focus:not(:focus-visible) { outline: none; }
+
+/* 小さい画面でも前回3行と入力を共存させる独立した入力領域。 */
+#view-session { padding: 8px; }
+#view-session .card { padding: 8px; margin: 0 0 8px; }
+#view-session .card > h2 { margin: 0; }
+#view-session .card-heading { min-height: 44px; }
+#view-session .card > .muted { margin: 4px 0; }
+#session-overlay > .rest { position: static; flex: 0 0 auto; }
+#session-overlay > .rest .rest-control { min-height: 44px; font-size: 22px; }
+.session-input { flex: 0 0 auto; padding: 8px; background: var(--surface-2); border-top: 1px solid var(--line); }
+.session-input:has(+ .rest[hidden]) { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+.session-input .controls { padding: 0; margin: 0; border: 0; }
+.session-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.session-input .number-control { margin: 0; gap: 4px; min-width: 0; }
+.session-input .number-control button { width: 44px; min-width: 44px; height: 48px; padding: 4px; }
+.session-input .number-field { display: block; position: relative; min-width: 0; height: 48px; padding: 0; }
+.session-input .number-field input { width: 100%; font-size: 22px; height: 48px; min-height: 48px; padding: 8px 2px 0; }
+.session-input .number-field .unit { position: absolute; top: 0; right: 4px; font-size: 10px; pointer-events: none; }
+.session-actions { display: flex; gap: 8px; margin-top: 8px; }
+.session-actions > button:first-child { min-width: 88px; }
+.session-actions > .primary { flex: 1; width: auto; }
