@@ -325,3 +325,13 @@ dialog.sheet.sheet-dragging { transition: none; }
 .card-heading[aria-expanded="true"] .icon { transform: rotate(-90deg); }
 .exercise-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .exercise-history { min-width: 44px; min-height: 44px; background: none; border: 0; color: var(--muted); font-size: 15px; }
+
+/* サマリーを小画面内に収め、取っ手を常に先頭に保つ。 */
+dialog.summary { padding: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+dialog.summary h2 { font-size: 20px; margin: 8px 0; }
+.summary-seal { width: 32px; height: 32px; }
+.summary > p { margin: 4px 0 8px; }
+.summary-volume { padding: 8px 0; }
+.summary-volume strong { font-size: 32px; margin-top: 4px; }
+.summary-grid { gap: 8px 16px; margin: 12px 0; }
+.summary-grid dd { font-size: 20px; }

@@ -11,6 +11,6 @@ export function showSummary(session, data, unit) {
   for (const [label, value] of [['所要時間', data.duration === null ? '未記録' : formatElapsed(data.duration)], ['種目', `${data.exercises}種目`], ['セット', `${data.sets}セット`], ['自己ベスト更新', `${data.records}件`]]) {
     const item = element('div'); item.append(element('dt', label), element('dd', value)); grid.append(item);
   }
-  modal.prepend(seal); modal.append(element('p', formatDate(session.date), 'muted'), volume, grid, button('ホームへ戻る', () => modal.close(), 'primary'));
+  modal.querySelector('.sheet-grabber').after(seal); modal.append(element('p', formatDate(session.date), 'muted'), volume, grid, button('ホームへ戻る', () => modal.close(), 'primary'));
   modal.showModal();
 }
