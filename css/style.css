@@ -335,3 +335,8 @@ dialog.summary h2 { font-size: 20px; margin: 8px 0; }
 .summary-volume strong { font-size: 32px; margin-top: 4px; }
 .summary-grid { gap: 8px 16px; margin: 12px 0; }
 .summary-grid dd { font-size: 20px; }
+.sheet .section-heading { background: var(--surface); }
+input[type="checkbox"] { appearance: none; -webkit-appearance: none; position: relative; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 0; background: transparent; vertical-align: middle; }
+input[type="checkbox"]::before { content: ''; position: absolute; inset: 10px; border: 2px solid var(--muted); border-radius: 4px; background: var(--surface-2); }
+input[type="checkbox"]:checked::before { background: var(--brass); border-color: var(--brass); }
+input[type="checkbox"]:checked::after { content: ''; position: absolute; left: 18px; top: 14px; width: 6px; height: 12px; border: solid var(--on-brass); border-width: 0 2px 2px 0; transform: rotate(45deg); }
