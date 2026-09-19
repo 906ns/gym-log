@@ -51,8 +51,8 @@ export function numberControl(title, value, step, min, max, mode = 'decimal') {
   let delta = step;
   const group = element('div', undefined, 'number-control');
   const change = direction => {
-    const current = field.value === '' ? min : Number(field.value);
-    if (!Number.isFinite(current)) { showError(new Error('数値を入力してください')); return false; }
+    const current = field.value === '' ? null : Number(field.value.normalize('NFKC'));
+    if (current !== null && !Number.isFinite(current)) { showError(new Error('数値を入力してください')); return false; }
     const next = stepValue(current, direction * delta, min, max);
     field.value = next.value;
     field.dispatchEvent(new Event('input', { bubbles: true }));
