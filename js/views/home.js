@@ -58,7 +58,7 @@ export async function renderHome(root, navigate) {
     const header = element('div', undefined, 'calendar-heading');
     header.append(button('前月', () => renderMonth(shiftMonth(key, -1))), element('h2', `${grid.label} / ${sessions.length}回`), button('翌月', () => renderMonth(shiftMonth(key, 1))));
     const days = element('div', undefined, 'calendar-grid');
-    for (const day of ['日', '月', '火', '水', '木', '金', '土']) days.append(element('span', day, 'weekday'));
+    for (const day of ['月', '火', '水', '木', '金', '土', '日']) days.append(element('span', day, 'weekday'));
     for (const date of grid.cells) {
       if (!date) { days.append(element('span')); continue; }
       const entries = sessions.filter(row => row.date === date).sort((a, b) => b.started_at - a.started_at);

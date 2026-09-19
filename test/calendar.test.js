@@ -12,3 +12,9 @@ test('過去入力は当日より前の正午で作成し通常セッション�
   assert.throws(() => pastStart('2026-02-30', '2026-09-16'));
   assert.equal(isPastEntry({ date: '2026-09-14', created_at: new Date('2026-09-16T09:00:00').getTime() }), true);
 });
+
+test('カレンダーは週次集計と同じ月曜始まり', () => {
+  assert.equal(monthGrid('2026-06-01').cells[0], '2026-06-01');
+  assert.equal(monthGrid('2026-02-01').cells[6], '2026-02-01');
+  assert.equal(monthGrid('2024-02-01').cells[3], '2024-02-01');
+});

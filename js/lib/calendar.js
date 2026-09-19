@@ -3,7 +3,7 @@ export function monthGrid(key) {
   const date = new Date(`${key.slice(0, 7)}-01T12:00:00`);
   const year = date.getFullYear(); const month = date.getMonth();
   const length = new Date(year, month + 1, 0).getDate();
-  const cells = Array(date.getDay()).fill(null);
+  const cells = Array((date.getDay() + 6) % 7).fill(null);
   for (let day = 1; day <= length; day++) cells.push(dateKey(new Date(year, month, day, 12)));
   while (cells.length % 7) cells.push(null);
   return { label: `${year}年${month + 1}月`, cells, first: dateKey(date), last: dateKey(new Date(year, month, length, 12)) };
