@@ -11,7 +11,7 @@ export async function showExerciseHistory(exercise, unit, onChange) {
   const history = groupHistory(sets, sessions);
   const pr = personalRecords(sets);
   const modal = dialog('dlg-history', exercise.name);
-  modal.append(button('閉じる', () => modal.close()), element('h2', '自己ベスト'));
+  modal.append(element('h2', '自己ベスト'));
   if (pr.weightSet) modal.append(element('p', `最大重量 ${weightText(pr.weightSet.weight, unit)} × ${pr.weightSet.reps}`),
     element('p', `推定1RM ${formatTotal(pr.estimated, unit)}`), element('p', `最大ボリューム ${formatTotal(pr.volume, unit)}`));
   else modal.append(element('p', '最初のセットを記録しましょう', 'muted'));
@@ -27,5 +27,6 @@ export async function showExerciseHistory(exercise, unit, onChange) {
     exercise = await repo.saveExercise({ ...exercise, setup_note: value }, exercise);
     await onChange(); modal.close(); await showExerciseHistory(exercise, unit, onChange);
   }), 'note'));
+  modal.append(button('閉じる', () => modal.close(), 'wide'));
   modal.showModal();
 }

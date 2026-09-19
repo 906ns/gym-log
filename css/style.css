@@ -343,3 +343,6 @@ input[type="checkbox"]:checked::after { content: ''; position: absolute; left: 1
 
 .input-error { margin: 4px 0 0; color: var(--danger); font-size: 15px; }
 [aria-invalid="true"] { outline: 2px solid var(--danger); outline-offset: -2px; }
+
+.filters button { min-width: 44px; min-height: 44px; }
+.increments button { min-height: 44px; height: 44px; }
