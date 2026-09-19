@@ -41,7 +41,8 @@ export async function renderSession(root, session, navigate) {
       if (data) showSummary(completed, data, globalUnit);
     }
   }));
-  root.replaceChildren(cards, note, button('＋ 種目を追加', openPicker, 'wide'));
+  const addExercise = button('＋ 種目を追加', openPicker, 'wide');
+  root.replaceChildren(cards, note, addExercise);
   overlay.append(inputDock, footer);
   let defaultRest = await repo.setting('default_rest_seconds', 90);
   function tick() {
@@ -70,6 +71,7 @@ export async function renderSession(root, session, navigate) {
     inputDock.replaceChildren();
     inputDock.hidden = !selected;
     const ids = [...new Set([...sets.map(row => row.exercise_id), ...added])];
+    addExercise.hidden = !ids.length;
     if (!ids.length) cards.append(element('p', '最初の種目を選びましょう', 'empty-message'), button('種目を選ぶ', openPicker, 'primary'));
     for (const id of ids) {
       const exercise = exercises.find(row => row.id === id);
@@ -87,7 +89,7 @@ export async function renderSession(root, session, navigate) {
         if (next && !matchMedia('(prefers-reduced-motion: reduce)').matches) next.animate([{ height: `${height}px` }, { height: `${next.getBoundingClientRect().height}px` }], { duration: 140, easing: 'ease-out' });
       }, 'card-heading');
       toggle.setAttribute('aria-expanded', String(selected === id));
-      toggle.append(element('span', `${today.length}セット / 最大${weightText(maxWeight(today), resolveUnit(exercise, globalUnit))}`));
+      toggle.append(element('span', today.length ? `${today.length}セット / 最大${weightText(maxWeight(today), resolveUnit(exercise, globalUnit))}` : '未記録'));
       toggle.append(icon('close'));
       const name = button(exercise.name, () => showExerciseHistory(exercise, resolveUnit(exercise, globalUnit), reload), 'exercise-name');
       const heading = element('h2'); heading.append(name);
