@@ -56,12 +56,13 @@ export async function renderSettings(root, navigate) {
     modal.append(field, button('保存する', async () => { await repo.saveSetting('default_rest_seconds', numberInput(field.value, 0, 600, true)); modal.close(); await refresh(); }, 'primary'), button('やめる', () => modal.close()));
     modal.showModal();
   } });
-  root.replaceChildren(sectionHeading('表示', 2), themeControls, glassRow, list,
-    listRow({ title: '種目を追加', symbol: 'add', action: () => editExercise() }), sectionHeading('トレーニング', 3),
+  root.replaceChildren(sectionHeading('表示'), themeControls, glassRow, sectionHeading('種目一覧'),
+    listRow({ title: '種目を追加', symbol: 'add', action: () => editExercise() }), list,
+    sectionHeading('トレーニング'),
     listRow({ title: '重量の表示単位', symbol: 'weight', control: unitControls }), restRow,
-    listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), sectionHeading('データ', 4),
+    listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), sectionHeading('データ'),
     exportRow, importRow, upload, listRow({ title: 'データの保持', value: persisted ? '許可' : '未許可' }),
-    listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), sectionHeading('このアプリ', 2),
+    listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), sectionHeading('このアプリ'),
     listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-glass-6' }));
   let section;
   for (const node of [...root.children]) {
