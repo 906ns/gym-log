@@ -18,5 +18,5 @@ export const sessionVolume = sets => round(activeSets(sets).reduce((sum, set) =>
 export const maxWeight = sets => Math.max(0, ...activeSets(sets).map(set => set.weight));
 export const bestMax = sets => Math.max(0, ...activeSets(sets).map(set => estimatedMax(set.weight, set.reps)));
 export const previousDifference = (today, previous) => round(bestMax(today) - bestMax(previous), 1);
-export const signedDifference = (value, previous) => { const delta = round(value - previous, 1); return `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`; };
+export const signedDifference = (value, previous) => { const delta = value - previous; return `${delta > 0 ? '+' : delta < 0 ? '-' : ''}${Math.abs(round(delta, 1)).toFixed(1)}`; };
 export const increment = (value, step, min, max) => round(Math.min(max, Math.max(min, (Number(value) || 0) + step)));

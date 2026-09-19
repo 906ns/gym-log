@@ -6,11 +6,11 @@ import { showExerciseHistory } from './exercise-history.js';
 import { filterExercises } from '../lib/history.js';
 import { personalRecords, recordAchievements } from '../lib/records.js';
 import { weightControl } from './weight-control.js';
-import { resolveUnit, weightText, formatTotal } from '../lib/units.js';
+import { resolveUnit, weightText, formatTotal, kgToLb } from '../lib/units.js';
 import { stopRepeating } from './pointer.js';
 import * as repo from '../repo.js';
 import { elapsedSeconds, formatElapsed, formatDate } from '../lib/datetime.js';
-import { maxWeight, bestMax, previousDifference, increment } from '../lib/calc.js';
+import { maxWeight, bestMax, previousDifference, increment, signedDifference } from '../lib/calc.js';
 import { element, button, numberControl, template, dialog, confirmAction, editText, parts, select, input, increments, showError } from './ui.js';
 export async function renderSession(root, session, navigate) {
   const globalUnit = await repo.setting('weight_unit', 'kg');
@@ -98,7 +98,7 @@ export async function renderSession(root, session, navigate) {
       toggle.setAttribute('aria-label', `${exercise.name}の入力を${selected === id ? '閉じる' : '開く'}`);
       card.append(heading, meta);
       if (selected === id) expanded(card, exercise, today, prev);
-      if (today.length) card.append(element('p', `推定1RM ${formatTotal(bestMax(today), resolveUnit(exercise, globalUnit))}${prev ? ` / 前回比 ${formatTotal(previousDifference(today, prev.sets), resolveUnit(exercise, globalUnit))}` : ''}`, 'muted'));
+      if (today.length) card.append(element('p', `推定1RM ${formatTotal(bestMax(today), resolveUnit(exercise, globalUnit))}${prev ? ` / 前回比 ${`${signedDifference(resolveUnit(exercise, globalUnit) === 'lb' ? kgToLb(bestMax(today)) : bestMax(today), resolveUnit(exercise, globalUnit) === 'lb' ? kgToLb(bestMax(prev.sets)) : bestMax(prev.sets))} ${resolveUnit(exercise, globalUnit)}`}` : ''}`, 'muted'));
       cards.append(card);
     }
     // DOM再構築時のスクロール補正で、見ていた前回行が動かないようにする。
