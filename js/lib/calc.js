@@ -11,7 +11,9 @@ export function setValues(weight, reps) {
   return { weight: value, reps: numberInput(reps, 1, 100, true) };
 }
 const valid = (weight, reps) => Number.isFinite(weight) && weight >= 0 && weight <= 500 && Number.isInteger(reps) && reps >= 1 && reps <= 100;
-export const estimatedMax = (weight, reps) => valid(weight, reps) ? round(reps === 1 ? weight : weight * (1 + reps / 30), 1) : 0;
+// 自己ベスト判定では丸め前の差を使うため、表示用の丸めと分ける。
+export const epley = (weight, reps) => reps === 1 ? weight : weight * (1 + reps / 30);
+export const estimatedMax = (weight, reps) => valid(weight, reps) ? round(epley(weight, reps), 1) : 0;
 export const setVolume = ({ weight, reps }) => valid(weight, reps) ? round(weight * reps, 4) : 0;
 export const activeSets = sets => sets.filter(set => set.deleted_at === null);
 export const sessionVolume = sets => round(activeSets(sets).reduce((sum, set) => sum + (valid(set.weight, set.reps) ? set.weight * set.reps : 0), 0), 4);
