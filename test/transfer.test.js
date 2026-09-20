@@ -36,3 +36,13 @@ test('全ストアの往復と重量・レップの境界を検証する', () =>
     assert.throws(() => serialize(changed, 10), /セット/);
   }
 });
+
+test('製品版が旧1.1.0のバックアップも読み込んで往復できる', () => {
+  const source = data();
+  const value = JSON.parse(serialize(source, 10));
+  assert.equal(value.app_version, '1.2.0');
+  value.app_version = '1.1.0';
+  const restored = parse(JSON.stringify(value));
+  assert.deepEqual(restored.data, source);
+  assert.deepEqual(parse(serialize(restored.data, 20)).data, source);
+});

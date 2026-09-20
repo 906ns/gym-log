@@ -1,3 +1,4 @@
+import { APP_VERSION } from './version.js';
 import { migrateData } from './migration.js';
 import { validDate } from './datetime.js';
 export const STORES = ['exercises', 'sessions', 'sets', 'body_weights', 'meta'];
@@ -54,7 +55,7 @@ export function validateExport(value) {
   return value;
 }
 export function serialize(data, now) {
-  return JSON.stringify(validateExport({ format: 'gym-log-export', schema_version: 2, exported_at: now, app_version: '1.1.0', data }), null, 2);
+  return JSON.stringify(validateExport({ format: 'gym-log-export', schema_version: 2, exported_at: now, app_version: APP_VERSION, data }), null, 2);
 }
 export function parse(text) {
   let value;
