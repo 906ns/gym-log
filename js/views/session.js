@@ -146,7 +146,7 @@ export async function renderSession(root, session, navigate) {
     repo.exerciseSets(exercise.id).then(history => {
       if (!card.isConnected) return;
       const pr = personalRecords(history);
-      prLine.textContent = pr.weightSet ? `自己ベスト ${weightText(pr.weightSet.weight, unit)} × ${pr.weightSet.reps} / 推定1RM ${formatTotal(pr.estimated, unit)}` : '';
+      prLine.textContent = pr.weightSet ? `自己ベスト ${weightText(pr.weightSet.weight, unit)} × ${pr.weightSet.reps}` : '';
       for (const [id, updates] of recordAchievements(history)) {
         const badge = badges.get(id);
         if (badge && updates.length) { badge.textContent = '自己ベスト'; badge.setAttribute('aria-label', `自己ベスト: ${updates.join('、')}`); }
