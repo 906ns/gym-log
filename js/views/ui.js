@@ -12,7 +12,13 @@ export function showError(error) {
   console.error(error);
   const openDialog = [...document.querySelectorAll('dialog[open]')].at(-1);
   let node = openDialog?.querySelector('[role="alert"]');
-  if (openDialog && !node) { node = element('p'); node.setAttribute('role', 'alert'); openDialog.prepend(node); }
+  if (openDialog && !node) {
+    node = element('p'); node.setAttribute('role', 'alert');
+    // 取っ手と画面名を先頭に保ち、エラーでシートの構造を変えない。
+    const heading = openDialog.querySelector(':scope > h2, :scope > header');
+    if (heading) heading.after(node);
+    else openDialog.append(node);
+  }
   node ||= document.querySelector(document.querySelector('#session-overlay').hidden ? '#error' : '#session-error');
   node.textContent = error.message || String(error);
   node.hidden = false;
