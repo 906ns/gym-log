@@ -1,4 +1,5 @@
 import { showSessionHistory } from './session-history.js';
+import { dateControl } from './date-control.js';
 import { chart, icon } from './graphics.js';
 import { weekStart, daysBetween } from '../lib/insights.js';
 import { monthGrid, shiftMonth, isPastEntry } from '../lib/calendar.js';
@@ -7,7 +8,7 @@ import { weightText, formatTotal, kgToLb, resolveUnit } from '../lib/units.js';
 import * as repo from '../repo.js';
 import { dateKey, formatDate, elapsedSeconds, formatElapsed } from '../lib/datetime.js';
 import { signedDifference } from '../lib/calc.js';
-import { element, button, numberControl, input, label, template, dialog, confirmAction } from './ui.js';
+import { element, button, numberControl, dialog } from './ui.js';
 export async function renderHome(root, navigate) {
   const [weights, current, history, showFat] = await Promise.all([repo.latestWeights(), repo.currentSession(), repo.recentSessions(8), repo.setting('show_body_fat', true)]);
   const unit = await repo.setting('weight_unit', 'kg');
@@ -38,8 +39,8 @@ export async function renderHome(root, navigate) {
   const calendar = element('section', undefined, 'calendar');
   const past = button('過去の日付で記録する', () => {
     const modal = dialog('dlg-editor', '過去の日付で記録する');
-    const date = input('トレーニングの日付'); date.type = 'date'; date.max = dateKey(new Date(Date.now() - 86400000));
-    modal.append(label('日付', date), button('記録を始める', async () => {
+    const date = dateControl('トレーニングの日付');
+    modal.append(date.group, button('記録を始める', async () => {
       const session = await repo.startSession(date.value); modal.close(); await navigate('session', session);
     }, 'primary'), button('やめる', () => modal.close())); modal.showModal();
   }, 'wide quiet');
@@ -82,11 +83,11 @@ export async function renderHome(root, navigate) {
   }
   function openBody() {
     const modal = dialog('dlg-body-weight', '体重を記録');
-    const date = input('測定日', dateKey(new Date())); date.type = 'date';
+    const date = dateControl('測定日', { value: dateKey(new Date()), includeToday: true });
     const weight = weightControl(latest?.weight, unit, .1);
     const fat = numberControl('%', latest?.body_fat ?? '', .1, 0, 100);
     weight.field.setAttribute('aria-label', '体重'); fat.field.setAttribute('aria-label', '体脂肪率');
-    modal.append(label('測定日', date), weight.group);
+    modal.append(date.group, weight.group);
     if (showFat) modal.append(element('p', '体脂肪率（任意）'), fat.group);
     modal.append(button('記録する', async () => {
       await repo.saveWeight(date.value, weight.kg(), showFat ? fat.field.value : null); modal.close(); await navigate('home');

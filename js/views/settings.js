@@ -64,7 +64,7 @@ export async function renderSettings(root, navigate) {
     listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), sectionHeading('データ'),
     exportRow, importRow, upload, listRow({ title: 'データの保持', value: persisted ? '許可' : '未許可' }),
     listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), sectionHeading('このアプリ'),
-    listRow({ title: 'バージョン', value: APP_VERSION }), listRow({ title: 'キャッシュ', value: 'gym-log-glass-8' }));
+    listRow({ title: 'バージョン', value: APP_VERSION }), listRow({ title: 'キャッシュ', value: 'gym-log-glass-9' }));
   let section;
   for (const node of [...root.children]) {
     if (node.classList.contains('section-heading')) {

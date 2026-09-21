@@ -88,6 +88,7 @@ gym-log/
 │   ├─ db.js                  IndexedDB の open / migration / 低レベル操作
 │   ├─ repo.js                ドメイン操作（db.js を使う。views からはここだけ呼ぶ）
 │   ├─ views/                 画面・DOM操作
+│   │   ├─ date-control.js
 │   │   ├─ exercise-history.js
 │   │   ├─ glass.js
 │   │   ├─ graphics.js
@@ -211,6 +212,7 @@ views/*  ──>  repo.js  ──>  db.js  ──>  IndexedDB
 - 重量入力は `inputmode="decimal"`、レップ入力は `inputmode="numeric"`、
   どちらも `type="text"` + 自前の数値バリデーションとする。
   `type="number"` はスピナーと入力途中の値の扱いが端末で揺れるため使わない。
+- 日付入力も `type="date"` を使わない。シート内ではネイティブの日付ピッカーに依存せず、日付候補をタップして選ぶ。
 - ボタンに `touch-action: manipulation` を指定し、ダブルタップズームの遅延を消す。
 - 操作系要素は `user-select: none`。入力欄とメモ表示は選択可のままにする。
 - 初回の書き込み成功時に `navigator.storage.persist()` を呼ぶ（ユーザー操作起因の文脈で）。

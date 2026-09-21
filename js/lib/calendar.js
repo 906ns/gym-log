@@ -17,3 +17,13 @@ export function pastStart(key, today) {
   if (!validDate(key) || key >= today) throw new Error('今日より前の日付を選んでください');
   return new Date(`${key}T12:00:00`).getTime();
 }
+export function dateCandidates(today, { includeToday = false, offset = 0 } = {}) {
+  if (!validDate(today) || !Number.isInteger(offset) || offset < 0) throw new Error('正しい日付と候補位置を指定してください');
+  const anchor = new Date(`${today}T12:00:00`);
+  // 夏時間の切り替わりでも日付を飛ばさないよう、ミリ秒ではなく暦日を戻す。
+  return Array.from({ length: 14 }, (_, index) => {
+    const date = new Date(anchor);
+    date.setDate(date.getDate() - offset - index - (includeToday ? 0 : 1));
+    return dateKey(date);
+  });
+}
