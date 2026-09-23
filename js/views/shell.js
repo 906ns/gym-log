@@ -13,7 +13,6 @@ export function createShell(navigate) {
     select(name) {
       header.replaceChildren(element('h1', titles[name]));
       for (const tab of tabs.children) {
-        tab.classList.toggle('lg-inner-fill', tab.dataset.tab === name);
         if (tab.dataset.tab === name) tab.setAttribute('aria-current', 'page');
         else tab.removeAttribute('aria-current');
       }

@@ -9,8 +9,9 @@ export function formatWeight(kg, unit = 'kg') {
   return { value: roundForDisplay(unit === 'lb' ? kgToLb(kg) : kg, unit), label: unit };
 }
 export function parseWeightInput(text, unit = 'kg') {
-  if (!['kg', 'lb'].includes(unit) || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(String(text).trim())) return null;
-  const input = Number(text);
+  const normalized = String(text).normalize('NFKC').trim();
+  if (!['kg', 'lb'].includes(unit) || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return null;
+  const input = Number(normalized);
   const exact = unit === 'lb' ? input * LB_IN_KG : input;
   if (!Number.isFinite(exact) || exact < 0 || exact > 500) return null;
   return round(exact, 4);

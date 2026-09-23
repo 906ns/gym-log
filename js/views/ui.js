@@ -12,7 +12,13 @@ export function showError(error) {
   console.error(error);
   const openDialog = [...document.querySelectorAll('dialog[open]')].at(-1);
   let node = openDialog?.querySelector('[role="alert"]');
-  if (openDialog && !node) { node = element('p'); node.setAttribute('role', 'alert'); openDialog.prepend(node); }
+  if (openDialog && !node) {
+    node = element('p'); node.setAttribute('role', 'alert');
+    // 取っ手と画面名を先頭に保ち、エラーでシートの構造を変えない。
+    const heading = openDialog.querySelector(':scope > h2, :scope > header');
+    if (heading) heading.after(node);
+    else openDialog.append(node);
+  }
   node ||= document.querySelector(document.querySelector('#session-overlay').hidden ? '#error' : '#session-error');
   node.textContent = error.message || String(error);
   node.hidden = false;
@@ -26,6 +32,10 @@ export function button(text, action, className) {
   node.addEventListener('click', async () => {
     if (node.disabled) return;
     node.disabled = true;
+    // 再試行前に同じ画面の古いエラーを解除し、失敗時はcatchで新しい原因を示す。
+    const modal = node.closest('dialog');
+    const errorNode = modal ? modal.querySelector('[role="alert"]') : document.querySelector(document.querySelector('#session-overlay').hidden ? '#error' : '#session-error');
+    if (errorNode) { errorNode.hidden = true; errorNode.textContent = ''; }
     try { await action(); } catch (error) { showError(error); }
     finally { node.disabled = false; }
   });
@@ -47,8 +57,8 @@ export function numberControl(title, value, step, min, max, mode = 'decimal') {
   let delta = step;
   const group = element('div', undefined, 'number-control');
   const change = direction => {
-    const current = field.value === '' ? min : Number(field.value);
-    if (!Number.isFinite(current)) { showError(new Error('数値を入力してください')); return false; }
+    const current = field.value === '' ? null : Number(field.value.normalize('NFKC'));
+    if (current !== null && !Number.isFinite(current)) { showError(new Error('数値を入力してください')); return false; }
     const next = stepValue(current, direction * delta, min, max);
     field.value = next.value;
     field.dispatchEvent(new Event('input', { bubbles: true }));

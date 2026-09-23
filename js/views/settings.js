@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../lib/version.js';
 import { saveGlassAppearance, syncGlassAppearance } from './glass.js';
 import { syncTheme, themeMode, setTheme } from './theme.js';
 import { listRow, groupedList, sectionHeading } from './list.js';
@@ -51,18 +52,19 @@ export async function renderSettings(root, navigate) {
   } });
   const importRow = listRow({ title: 'バックアップから復元する', symbol: 'history', action: () => upload.click() });
   importRow.classList.add('danger'); upload.hidden = true;
-  const restRow = listRow({ title: '目標休憩秒数', value: `${rest}秒`, symbol: 'history', action: () => {
+  const restRow = listRow({ title: '目標休憩秒数', subtitle: '新規種目の初期値。既存種目は種目一覧から変更', value: `${rest}秒`, symbol: 'history', action: () => {
     const modal = dialog('dlg-editor', '目標休憩秒数'); const field = input('秒数', rest, 'numeric');
     modal.append(field, button('保存する', async () => { await repo.saveSetting('default_rest_seconds', numberInput(field.value, 0, 600, true)); modal.close(); await refresh(); }, 'primary'), button('やめる', () => modal.close()));
     modal.showModal();
   } });
-  root.replaceChildren(sectionHeading('表示', 2), themeControls, glassRow, list,
-    listRow({ title: '種目を追加', symbol: 'add', action: () => editExercise() }), sectionHeading('トレーニング', 3),
+  root.replaceChildren(sectionHeading('表示'), themeControls, glassRow, sectionHeading('種目一覧'),
+    listRow({ title: '種目を追加', symbol: 'add', action: () => editExercise() }), list,
+    sectionHeading('トレーニング'),
     listRow({ title: '重量の表示単位', symbol: 'weight', control: unitControls }), restRow,
-    listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), sectionHeading('データ', 4),
+    listRow({ title: '体脂肪率を入力する', symbol: 'weight', control: fat }), sectionHeading('データ'),
     exportRow, importRow, upload, listRow({ title: 'データの保持', value: persisted ? '許可' : '未許可' }),
-    listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), sectionHeading('このアプリ', 2),
-    listRow({ title: 'バージョン', value: '1.2.0' }), listRow({ title: 'キャッシュ', value: 'gym-log-glass-3' }));
+    listRow({ title: '保存した記録', subtitle: `セッション ${counts[0]} / セット ${counts[1]} / 体重 ${counts[2]}`, symbol: 'history' }), sectionHeading('このアプリ'),
+    listRow({ title: 'バージョン', value: APP_VERSION }), listRow({ title: 'キャッシュ', value: 'gym-log-glass-9' }));
   let section;
   for (const node of [...root.children]) {
     if (node.classList.contains('section-heading')) {

@@ -1,3 +1,4 @@
+import { setInputErrors } from '../lib/input.js';
 import { listRow, sectionHeading, emptyState } from './list.js';
 import { showSummary } from './summary.js';
 import { icon } from './graphics.js';
@@ -6,11 +7,11 @@ import { showExerciseHistory } from './exercise-history.js';
 import { filterExercises } from '../lib/history.js';
 import { personalRecords, recordAchievements } from '../lib/records.js';
 import { weightControl } from './weight-control.js';
-import { resolveUnit, weightText, formatTotal } from '../lib/units.js';
+import { resolveUnit, weightText, formatTotal, kgToLb } from '../lib/units.js';
 import { stopRepeating } from './pointer.js';
 import * as repo from '../repo.js';
 import { elapsedSeconds, formatElapsed, formatDate } from '../lib/datetime.js';
-import { maxWeight, bestMax, previousDifference, increment } from '../lib/calc.js';
+import { maxWeight, bestMax, previousDifference, increment, signedDifference } from '../lib/calc.js';
 import { element, button, numberControl, template, dialog, confirmAction, editText, parts, select, input, increments, showError } from './ui.js';
 export async function renderSession(root, session, navigate) {
   const globalUnit = await repo.setting('weight_unit', 'kg');
@@ -21,6 +22,8 @@ export async function renderSession(root, session, navigate) {
   let previous = new Map();
   let lastAdded;
   let disposed = false;
+  const overlay = document.querySelector('#session-overlay');
+  const inputDock = element('div', undefined, 'session-input');
   const header = document.querySelector('#session-header');
   header.replaceChildren();
   const elapsed = element('span', '', 'muted');
@@ -39,13 +42,14 @@ export async function renderSession(root, session, navigate) {
       if (data) showSummary(completed, data, globalUnit);
     }
   }));
-  root.replaceChildren(note, cards, button('＋ 種目を追加', openPicker, 'wide'), footer);
+  const addExercise = button('＋ 種目を追加', openPicker, 'wide');
+  root.replaceChildren(cards, note, addExercise);
+  overlay.append(inputDock, footer);
   let defaultRest = await repo.setting('default_rest_seconds', 90);
   function tick() {
     elapsed.textContent = isPastEntry(session) ? '過去の記録' : formatElapsed(elapsedSeconds(session.started_at, Date.now()));
     const last = sets.at(-1);
     footer.hidden = !last || isPastEntry(session);
-    requestAnimationFrame(() => root.style.setProperty('--rest-offset', `${footer.getBoundingClientRect().height}px`));
     if (!last) return;
     const seconds = elapsedSeconds(last.recorded_at, Date.now());
     const target = exercises.find(row => row.id === (selected || last.exercise_id))?.default_rest_seconds ?? defaultRest;
@@ -61,9 +65,14 @@ export async function renderSession(root, session, navigate) {
     paint(); tick();
   }
   function paint() {
+    const scroll = root.closest('.session-scroll');
+    const scrollTop = scroll.scrollTop;
     stopRepeating();
     cards.replaceChildren();
+    inputDock.replaceChildren();
+    inputDock.hidden = !selected;
     const ids = [...new Set([...sets.map(row => row.exercise_id), ...added])];
+    addExercise.hidden = !ids.length;
     if (!ids.length) cards.append(element('p', '最初の種目を選びましょう', 'empty-message'), button('種目を選ぶ', openPicker, 'primary'));
     for (const id of ids) {
       const exercise = exercises.find(row => row.id === id);
@@ -77,19 +86,24 @@ export async function renderSession(root, session, navigate) {
         const height = card.getBoundingClientRect().height;
         selected = selected === id ? null : id; lastAdded = null; paint(); tick();
         const next = [...cards.children].find(node => node.dataset.exercise === id);
+        if (selected && next) next.scrollIntoView({ block: 'start' });
         if (next && !matchMedia('(prefers-reduced-motion: reduce)').matches) next.animate([{ height: `${height}px` }, { height: `${next.getBoundingClientRect().height}px` }], { duration: 140, easing: 'ease-out' });
       }, 'card-heading');
       toggle.setAttribute('aria-expanded', String(selected === id));
-      toggle.append(element('span', `${today.length}セット / 最大${weightText(maxWeight(today), resolveUnit(exercise, globalUnit))}`));
-      toggle.append(icon('close'));
-      const name = button(exercise.name, () => showExerciseHistory(exercise, resolveUnit(exercise, globalUnit), reload), 'exercise-name');
-      const heading = element('h2'); heading.append(name);
+      toggle.append(element('span', exercise.name), icon('forward'));
+      const history = button('履歴', () => showExerciseHistory(exercise, resolveUnit(exercise, globalUnit), reload), 'exercise-history');
+      history.setAttribute('aria-label', `${exercise.name}の履歴を見る`);
+      const heading = element('h2'); heading.append(toggle);
+      const meta = element('div', undefined, 'exercise-meta');
+      meta.append(element('span', today.length ? `${today.length}セット / 最大${weightText(maxWeight(today), resolveUnit(exercise, globalUnit))}` : '未記録', 'muted'), history);
       toggle.setAttribute('aria-label', `${exercise.name}の入力を${selected === id ? '閉じる' : '開く'}`);
-      card.append(heading, toggle);
-      if (today.length) card.append(element('p', `推定1RM ${formatTotal(bestMax(today), resolveUnit(exercise, globalUnit))}${prev ? ` / 前回比 ${formatTotal(previousDifference(today, prev.sets), resolveUnit(exercise, globalUnit))}` : ''}`, 'muted'));
+      card.append(heading, meta);
       if (selected === id) expanded(card, exercise, today, prev);
+      if (today.length) card.append(element('p', `推定1RM ${formatTotal(bestMax(today), resolveUnit(exercise, globalUnit))}${prev ? ` / 前回比 ${`${signedDifference(resolveUnit(exercise, globalUnit) === 'lb' ? kgToLb(bestMax(today)) : bestMax(today), resolveUnit(exercise, globalUnit) === 'lb' ? kgToLb(bestMax(prev.sets)) : bestMax(prev.sets))} ${resolveUnit(exercise, globalUnit)}`}` : ''}`, 'muted'));
       cards.append(card);
     }
+    // DOM再構築時のスクロール補正で、見ていた前回行が動かないようにする。
+    scroll.scrollTop = scrollTop;
   }
   function expanded(card, exercise, today, prev) {
     const initial = today.at(-1) || prev?.sets[0];
@@ -100,7 +114,7 @@ export async function renderSession(root, session, navigate) {
     weight.field.setAttribute('aria-label', '重量'); reps.field.setAttribute('aria-label', 'レップ');
     weight.field.classList.add('weight-input');
     const prLine = element('p', '', 'muted pr-line');
-    card.append(prLine);
+
     const badges = new Map();
     card.append(element('p', prev ? `前回 ${formatDate(prev.date)}` : 'この種目は初回です', 'muted'));
     for (const set of prev?.sets || []) {
@@ -110,7 +124,7 @@ export async function renderSession(root, session, navigate) {
       row.addEventListener('click', () => { weight.setKg(set.weight); reps.field.value = set.reps; });
       card.append(row);
     }
-    card.append(element('h2', isPastEntry(session) ? 'この日の記録' : '今日'));
+    if (today.length) card.append(element('h2', isPastEntry(session) ? 'この日の記録' : '今日'));
     for (const set of today) {
       const row = template('tpl-set-row');
       if (set.id === lastAdded) row.classList.add('just-added');
@@ -132,25 +146,47 @@ export async function renderSession(root, session, navigate) {
     repo.exerciseSets(exercise.id).then(history => {
       if (!card.isConnected) return;
       const pr = personalRecords(history);
-      prLine.textContent = pr.weightSet ? `自己ベスト ${weightText(pr.weightSet.weight, unit)} × ${pr.weightSet.reps} / 推定1RM ${formatTotal(pr.estimated, unit)}` : '';
+      prLine.textContent = pr.weightSet ? `自己ベスト ${weightText(pr.weightSet.weight, unit)} × ${pr.weightSet.reps}` : '';
       for (const [id, updates] of recordAchievements(history)) {
         const badge = badges.get(id);
         if (badge && updates.length) { badge.textContent = '自己ベスト'; badge.setAttribute('aria-label', `自己ベスト: ${updates.join('、')}`); }
       }
     }).catch(showError);
     const controls = element('div', undefined, 'controls');
-    controls.append(weight.group, increments(weight, exercise[incrementKey], async step => {
-      const updated = await repo.saveExercise({ ...exercise, [incrementKey]: step }, exercise);
-      Object.assign(exercise, updated);
-    }), reps.group);
+    const fields = element('div', undefined, 'session-fields');
+    fields.append(weight.group, reps.group);
+    const actions = element('div', undefined, 'session-actions');
+    const stepButton = button(`刻み ${exercise[incrementKey]}`, () => {
+      const modal = dialog('dlg-editor', '重量の増減幅');
+      modal.append(element('p', 'この種目の刻みを保存します。次回の記録にも使います。', 'muted'), increments(weight, exercise[incrementKey], async step => {
+        const updated = await repo.saveExercise({ ...exercise, [incrementKey]: step }, exercise);
+        Object.assign(exercise, updated);
+        stepButton.textContent = `刻み ${step}`;
+        modal.close();
+      }), button('閉じる', () => modal.close()));
+      modal.showModal();
+    });
+    controls.append(fields, actions);
     if (exercise.load_type === 'plate') controls.append(element('p', '合計（両側）', 'muted'));
+    const validation = element('p', '', 'input-error');
+    validation.id = 'set-input-error'; validation.setAttribute('role', 'alert'); validation.hidden = true;
+    for (const field of [weight.field, reps.field]) field.setAttribute('aria-describedby', validation.id);
     const record = button('記録する', async () => {
+      const errors = setInputErrors(weight.field.value, reps.field.value, unit);
+      weight.field.setAttribute('aria-invalid', String(Boolean(errors.weight)));
+      reps.field.setAttribute('aria-invalid', String(Boolean(errors.reps)));
+      validation.textContent = Object.values(errors).join('。');
+      validation.hidden = !Object.keys(errors).length;
+      if (!validation.hidden) return;
       const row = await repo.saveSet(session.id, exercise.id, weight.kg(), reps.field.value);
       lastAdded = row.id; await reload();
     }, 'primary');
     for (const field of [weight.field, reps.field]) field.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); record.click(); } });
-    controls.append(record);
-    card.append(controls);
+    actions.append(stepButton, record);
+    controls.append(validation);
+    // 入力と休憩はスクロール領域の外で高さを確保し、記録一覧に重ねない。
+    inputDock.append(controls);
+    card.append(prLine);
     if (exercise.setup_note) card.append(button(exercise.setup_note, () => editText('セッティング', exercise.setup_note, async value => {
       await repo.saveExercise({ ...exercise, setup_note: value }, exercise); await reload();
     }), 'note'));
@@ -200,6 +236,7 @@ export async function renderSession(root, session, navigate) {
       for (const exercise of matches) {
         list.append(listRow({ title: exercise.name, symbol: exercise.body_part, value: sets.some(row => row.exercise_id === exercise.id) ? '記録済' : '', action: async () => {
           added.push(exercise.id); selected = exercise.id; modal.close(); await reload();
+          [...cards.children].find(node => node.dataset.exercise === selected)?.scrollIntoView({ block: 'start' });
         } }));
       }
     }
@@ -219,5 +256,5 @@ export async function renderSession(root, session, navigate) {
   }
   await reload();
   const timer = setInterval(tick, 1000);
-  return () => { disposed = true; clearInterval(timer); stopRepeating(); };
+  return () => { disposed = true; clearInterval(timer); stopRepeating(); inputDock.remove(); footer.remove(); };
 }

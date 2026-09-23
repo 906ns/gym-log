@@ -315,3 +315,7 @@ IndexedDB への書き込みは `repo.js` が担当する。これによりテ�
 10年続けても 10 MB 未満で、iOS のオリジンあたりのクォータに対して十分小さい。
 容量対策は不要。ただしブラウザ内のデータは既定では best-effort 扱いなので、
 `navigator.storage.persist()` の要求と JSON エクスポートによるバックアップは必須。
+
+## バージョン番号の役割
+
+`db.js` の `SCHEMA_VERSION = 3` はIndexedDBのストア・インデックスと移行処理の版、バックアップJSONの `schema_version = 2` は転送形式の版です。metaの `schema_version = 2` はアプリ内データ形式（v1.1の種目フィールド）を示し、DBの構造版とは独立しています。`js/lib/version.js` の `APP_VERSION = '1.2.0'` は表示・書き出し用の製品バージョンであり、インポート可否には使いません。旧 `app_version: '1.1.0'` も引き続き読み込めます。

@@ -35,8 +35,9 @@
   オフラインで動かないため。フォントはシステムフォントスタックのみ。
 - **外部ネットワーク通信禁止**。`fetch` の宛先は自分自身の静的ファイルのみ。
 - **サーバー・認証・DB の実装禁止**。v1 は端末内で完結する。
-- **`localStorage` にトレーニングデータを保存しない**（設定値のキャッシュにも使わない。
-  すべて IndexedDB に置く。理由は `docs/data-model.md` の該当節を参照）。
+- **`localStorage` にトレーニングデータを保存しない**（設定も原則IndexedDB）。
+  例外はテーマ `gym-log-theme` のキャッシュのみ。初回描画前に外観を決めるため、
+  head内の同期スクリプト1箇所だけで読み書きする。IndexedDBを正とし、テーマ以外には使わない。
 - **物理削除の実装禁止**。削除は `deleted_at` を立てる論理削除のみ（例外は
   インポート時の全置換とデバッグ用の DB 削除機能）。
 - 数値の丸めを伴う集計ロジックを DOM から直接呼ばない（テスト不能になる）。
@@ -80,21 +81,47 @@ gym-log/
 │   ├─ icon-512.png
 │   └─ apple-touch-icon.png   180x180
 ├─ css/
-│   └─ style.css              単一ファイル。トークンは :root に定義
+│   ├─ style.css              画面CSS。トークンは :root に定義
+│   └─ glass.css              ナビゲーションのガラス表現
 ├─ js/
 │   ├─ app.js                 起動、画面遷移、SW 登録、永続化要求
 │   ├─ db.js                  IndexedDB の open / migration / 低レベル操作
 │   ├─ repo.js                ドメイン操作（db.js を使う。views からはここだけ呼ぶ）
-│   ├─ views/
+│   ├─ views/                 画面・DOM操作
+│   │   ├─ date-control.js
+│   │   ├─ exercise-history.js
+│   │   ├─ glass.js
+│   │   ├─ graphics.js
+│   │   ├─ history.js
 │   │   ├─ home.js
+│   │   ├─ liquid-glass.js
+│   │   ├─ list.js
+│   │   ├─ minibar.js
+│   │   ├─ motion.js
+│   │   ├─ pointer.js
+│   │   ├─ session-history.js
 │   │   ├─ session.js
-│   │   └─ settings.js
-│   └─ lib/                   ★純関数のみ。DOM と IndexedDB に触らない
-│       ├─ id.js
-│       ├─ datetime.js
+│   │   ├─ settings.js
+│   │   ├─ sheet-drag.js
+│   │   ├─ shell.js
+│   │   ├─ summary.js
+│   │   ├─ theme.js
+│   │   ├─ ui.js
+│   │   └─ weight-control.js
+│   └─ lib/                   純関数（wakelock.jsのみnavigator参照可）
 │       ├─ calc.js
-│       ├─ transfer.js        エクスポート/インポートのシリアライズと検証
-│       └─ wakelock.js        （例外: navigator に触るが DOM には触らない）
+│       ├─ calendar.js
+│       ├─ datetime.js
+│       ├─ history.js
+│       ├─ id.js
+│       ├─ input.js
+│       ├─ insights.js
+│       ├─ migration.js
+│       ├─ records.js
+│       ├─ transfer.js
+│       ├─ units.js
+│       ├─ version.js
+│       └─ wakelock.js
 ├─ test/
 │   ├─ datetime.test.js
 │   ├─ calc.js.test.js
@@ -185,6 +212,7 @@ views/*  ──>  repo.js  ──>  db.js  ──>  IndexedDB
 - 重量入力は `inputmode="decimal"`、レップ入力は `inputmode="numeric"`、
   どちらも `type="text"` + 自前の数値バリデーションとする。
   `type="number"` はスピナーと入力途中の値の扱いが端末で揺れるため使わない。
+- 日付入力も `type="date"` を使わない。シート内ではネイティブの日付ピッカーに依存せず、日付候補をタップして選ぶ。
 - ボタンに `touch-action: manipulation` を指定し、ダブルタップズームの遅延を消す。
 - 操作系要素は `user-select: none`。入力欄とメモ表示は選択可のままにする。
 - 初回の書き込み成功時に `navigator.storage.persist()` を呼ぶ（ユーザー操作起因の文脈で）。
@@ -198,7 +226,7 @@ views/*  ──>  repo.js  ──>  db.js  ──>  IndexedDB
 ## 9. テスト
 
 - `node --test` のみ。追加パッケージなし。
-- 対象は `js/lib/` の純関数。DOM と IndexedDB のテストは書かない。
+- 対象は `js/lib/` の純関数とApp Shellのファイル整合性。DOM と IndexedDB のテストは書かない。
 - 最低限カバーすること:
   - `datetime.js`: ローカル日付キーの生成、経過秒の算出、`m:ss` 整形、日付跨ぎ。
   - `calc.js`: 推定1RM、セットのボリューム、セッション総ボリューム、前回比の差分、
@@ -253,11 +281,11 @@ views/*  ──>  repo.js  ──>  db.js  ──>  IndexedDB
 以下は仕様書に登場しても v1 では実装しない。データモデルだけ先に用意してある。
 
 - サーバー同期、認証、複数端末間の共有
-- 推移グラフ、統計画面
+- 専用の推移グラフ・統計画面（v1.1で採用したホームと種目履歴の小さなSVG推移線は実装済み）
 - ウォームアップセットの UI（`is_warmup` カラムは作るが画面には出さない）
 - 休憩終了の音・バイブ・通知
 - 種目のカスタム並べ替え以外の高度な管理機能（タグ、部位の追加など）
-- ダークモード以外のテーマ
+- ダーク・ライト以外の追加テーマ（v1.2でダーク / ライト / システム追従を採用済み）
 
 「あったほうが良い」と判断しても勝手に追加しないこと。追加したい場合は
 実装せずに提案だけを報告に含める。

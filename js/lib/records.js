@@ -1,5 +1,5 @@
+import { epley } from './calc.js';
 const usable = row => row.deleted_at === null && !row.is_warmup;
-export const epley = row => row.reps === 1 ? row.weight : row.weight * (1 + row.reps / 30);
 export function personalRecords(sets) {
   const rows = sets.filter(usable);
   let weightSet = null;
@@ -7,7 +7,7 @@ export function personalRecords(sets) {
   let volume = 0;
   for (const row of rows) {
     if (!weightSet || row.weight > weightSet.weight || row.weight === weightSet.weight && row.reps > weightSet.reps) weightSet = row;
-    estimated = Math.max(estimated, epley(row)); volume = Math.max(volume, row.weight * row.reps);
+    estimated = Math.max(estimated, epley(row.weight, row.reps)); volume = Math.max(volume, row.weight * row.reps);
   }
   return { weightSet, estimated, volume };
 }
@@ -17,7 +17,7 @@ export function recordAchievements(sets) {
   let count = 0;
   let weight = 0; let estimated = 0; let volume = 0;
   for (const row of rows) {
-    const values = { weight: row.weight, estimated: epley(row), volume: row.weight * row.reps };
+    const values = { weight: row.weight, estimated: epley(row.weight, row.reps), volume: row.weight * row.reps };
     const updates = [];
     if (count && values.weight > weight) updates.push('最大重量');
     if (count && values.estimated > estimated) updates.push('推定1RM');
